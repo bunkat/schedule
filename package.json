@@ -1,0 +1,34 @@
+{
+	"name": "schedule",
+	"version": "0.0.1",
+	"description": "Automatically schedule project tasks",
+	"keywords": ["schedule", "occurrences", "recur", "cron", "project"],
+	"author": "BunKat <bill@bunkat.com>",
+	"main": "./app",
+	"repository" :
+		{
+		  "type" : "git",
+		  "url" : "git://github.com/bunkat/schedule.git"
+		},
+    "bugs" :
+    	{
+	    	"url" : "http://github.com/bunkat/schedule/issues"
+    	},
+	"engines":
+		{
+			"node": ">= 0.6.0"
+		},
+	"scripts":
+		{
+			"test": "make test",
+			"build": "make build"
+		},
+	"devDependencies":
+		{
+			"mocha": "*",
+			"should": ">=0.6.3",
+			"jslint": "*",
+			"uglify-js": "*",
+			"later": "*"
+		}
+}

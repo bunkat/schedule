@@ -1,0 +1,1 @@
+module.exports.schedule = require('./lib/schedule').schedule;
