@@ -1,7 +1,7 @@
 
 SOURCE = lib/*.js
 TESTS = test/*.js
-REPORTER = dot
+REPORTER = spec
 
 build:
 		cat $(SOURCE) > schedule.js
