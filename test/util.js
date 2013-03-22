@@ -1,10 +1,12 @@
 
 
-module.exports.task = function(id, lengthInHours, assignedTo) {
+module.exports.task = function(id, lengthInHours, assignedTo, dependencies, earliest) {
   return {
     id: id,
     estimatedTime: lengthInHours * 60,
-    assignedTo: assignedTo
+    assignedTo: assignedTo,
+    dependsOn: dependencies,
+    earliestStartTime: earliest
   };
 };
 
