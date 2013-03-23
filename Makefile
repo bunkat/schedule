@@ -5,8 +5,8 @@ PERF = test/*-perf.js
 REPORTER = spec
 
 build:
-		cat $(SOURCE) > schedule.js
-		./node_modules/.bin/uglifyjs schedule.js -o schedule.min.js
+		cat ./node_modules/later/later-recur.js $(SOURCE) > schedule.js
+		./node_modules/.bin/uglifyjs schedule.js -o schedule.min.js -m -c
 
 test:
 		@NODE_ENV=test ./node_modules/.bin/mocha \
