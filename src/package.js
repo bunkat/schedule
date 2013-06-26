@@ -1,18 +1,14 @@
-{
+var schedule = require("../index");
+
+console.log(JSON.stringify({
   "name": "schedule",
-  "version": "1.0.0",
+  "version": schedule.version,
   "description": "Schedule tasks, meetings, appointments, etc",
-  "keywords": [
-    "schedule",
-    "task",
-    "appointment",
-    "meeting",
-    "event"
-  ],
+  "keywords": ["schedule", "task", "appointment", "meeting", "event"],
   "author": "BunKat <bill@bunkat.com>",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/bunkat/schedule.git"
+  "repository" : {
+    "type" : "git",
+    "url" : "git://github.com/bunkat/schedule.git"
   },
   "main": "index.js",
   "browserify": "index-browserify.js",
@@ -34,4 +30,4 @@
   "scripts": {
     "test": "./node_modules/.bin/mocha test/**/*-test.js"
   }
-}
+}, null, 2));

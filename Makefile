@@ -1,27 +1,56 @@
+REPORTER ?= dot
+TESTS ?= $(shell find test -name "*-test.js")
 
-SOURCE = lib/*.js
-TESTS = test/*-test.js
-PERF = test/*-perf.js
-REPORTER = spec
+all: \
+	schedule.js \
+	schedule.min.js \
+	component.json \
+	package.json
 
-build:
-		cat ./node_modules/later/later-recur.js $(SOURCE) > schedule.js
-		./node_modules/.bin/uglifyjs schedule.js -o schedule.min.js -m -c
+.PHONY: clean all test test-cov
 
-test:
-		@NODE_ENV=test ./node_modules/.bin/mocha \
-				--require should \
-				--reporter $(REPORTER) \
-				$(TESTS)
+test: schedule.js
+	@NODE_ENV=test ./node_modules/.bin/mocha --reporter $(REPORTER) $(TESTS)
 
-perf:
-		@NODE_ENV=test ./node_modules/.bin/mocha \
-				--require should \
-				--reporter $(REPORTER) \
-				$(PERF)
+test-cov: schedule-cov.js
+	@SCHEDULE_COV=1 $(MAKE) test REPORTER=html-cov > coverage.html
 
-lint:
-		find lib/. -name "*.js" -print0 | xargs -0 ./node_modules/.bin/jslint \
-				--white --vars --plusplus --continue
+schedule-cov.js: schedule.js
+	@rm -f $@
+	@jscoverage --no-highlight src src-cov \
+		--no-instrument=schedule.js \
+		--no-instrument=core/index.js \
+		--no-instrument=start.js \
+		--no-instrument=end.js \
+		--no-instrument=component.js \
+		--no-instrument=package.js
+	node_modules/.bin/smash src-cov/schedule.js > schedule-cov.js
+	@chmod a-w $@
 
-.PHONY:	build test perf lint
+benchmark: all
+	@echo 'Constraints --------'
+	@node benchmark/constraint/next-bench.js
+	@echo 'Schedules --------'
+	@node benchmark/core/schedule-bench.js
+
+schedule.js: $(shell node_modules/.bin/smash --list src/schedule.js)
+	@rm -f $@
+	node_modules/.bin/smash src/schedule.js | node_modules/.bin/uglifyjs - -b indent-level=2 -o $@
+	@chmod a-w $@
+
+schedule.min.js: schedule.js
+	@rm -f $@
+	node_modules/.bin/uglifyjs $< -c -m -o $@
+
+component.json: src/component.js schedule.js
+	@rm -f $@
+	node src/component.js > $@
+	@chmod a-w $@
+
+package.json: src/package.js schedule.js
+	@rm -f $@
+	node src/package.js > $@
+	@chmod a-w $@
+
+clean:
+	rm -f schedule*.js package.json component.json

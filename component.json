@@ -1,13 +1,5 @@
 {
   "name": "schedule",
-  "version": "0.0.13",
-  "main": ["./schedule.min.js"],
-  "ignore": [
-    "examples/",
-    "node_modules/",
-    "test/"
-  ],
-  "devDependencies": {
-      "later": "*"
-  }
+  "version": "1.0.0",
+  "main": "./schedule.js"
 }
