@@ -18,14 +18,16 @@ console.log(JSON.stringify({
       "exports": "schedule"
     }
   },
+  "dependencies": {
+    "later": ">=1.1.0"
+  },
   "devDependencies": {
     "smash": "~0.0.8",
     "mocha": "*",
     "should": ">=0.6.3",
     "jslint": "*",
     "uglify-js": "*",
-    "benchmark": "*",
-    "later": ">=1.0.0"
+    "benchmark": "*"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha test/**/*-test.js"

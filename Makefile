@@ -19,6 +19,9 @@ schedule-cov.js: schedule.js
 	@rm -f $@
 	@jscoverage --no-highlight src src-cov \
 		--no-instrument=schedule.js \
+		--no-instrument=compat/index.js \
+		--no-instrument=util/index.js \
+		--no-instrument=date/index.js \
 		--no-instrument=core/index.js \
 		--no-instrument=start.js \
 		--no-instrument=end.js \
@@ -28,10 +31,7 @@ schedule-cov.js: schedule.js
 	@chmod a-w $@
 
 benchmark: all
-	@echo 'Constraints --------'
-	@node benchmark/constraint/next-bench.js
-	@echo 'Schedules --------'
-	@node benchmark/core/schedule-bench.js
+	@node benchmark/dependency-graph-bench.js
 
 schedule.js: $(shell node_modules/.bin/smash --list src/schedule.js)
 	@rm -f $@

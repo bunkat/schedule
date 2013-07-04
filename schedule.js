@@ -2,183 +2,31 @@ schedule = function() {
   var schedule = {
     version: "1.0.0"
   };
+  if (!Array.isArray) {
+    Array.isArray = function(vArg) {
+      return Object.prototype.toString.call(vArg) === "[object Array]";
+    };
+  }
+  schedule.date = {};
+  schedule.date.UTC = function() {
+    later.date.UTC();
+  };
+  schedule.date.localTime = function() {
+    later.date.localTime();
+  };
   schedule.functor = function(v) {
     return typeof v === "function" ? v : function() {
       return v;
     };
   };
-  var later = require("later");
-  later.date.localTime();
-  schedule.tree = function(taskItems) {
-    var tMap = buildTaskMap(taskItems), roots = [], leaves = [], maxDepth = 0;
-    var schedule = later.schedule({
-      schedules: [ {
-        dw: [ 2, 3, 4, 5, 6 ],
-        h_a: [ 8 ],
-        h_b: [ 16 ]
-      } ]
-    }), nextRange = memNextRange(schedule), prevRange = memPrevRange(schedule);
-    findRequiredBy(tMap);
-    findRootsAndLeaves(tMap, roots, leaves);
-    forwardPass(tMap, roots, nextRange, nextRange(new Date(2013, 2, 21)));
-    var end = findEndDate(tMap, leaves);
-    backwardPass(tMap, leaves, prevRange, prevRange(end));
-    if (roots.length === 0) throw new Error("At least one task must not depend on any others.");
-    function findEndDate(map, nodes) {
-      var end;
-      for (var i = 0, len = nodes.length; i < len; i++) {
-        var node = map[nodes[i]];
-        if (!end || node.optimial.earlyFinish > end) {
-          end = node.optimal.earlyFinish;
-        }
+  schedule.memoizedRangeFn = function(fn) {
+    var cache = {};
+    return function(start) {
+      if (!cache[start]) {
+        var result = fn(1, start);
+        cache[start] = [ result[0].getTime(), result[1].getTime() ];
       }
-      return end;
-    }
-    function buildTaskMap(items) {
-      var map = {};
-      for (var i = 0, len = items.length; i < len; i++) {
-        map[items[i].id] = items[i];
-      }
-      return map;
-    }
-    function findRequiredBy(map) {
-      for (var id in map) {
-        var child = map[id], dependsOn = child.dependsOn;
-        child.optimal = {};
-        if (!dependsOn) continue;
-        for (var i = 0, len = dependsOn.length; i < len; i++) {
-          var parent = map[dependsOn[i]];
-          (parent.requiredBy || (parent.requiredBy = [])).push(child.id);
-        }
-      }
-    }
-    function findRootsAndLeaves(map, roots, leaves) {
-      for (var id in map) {
-        var node = map[id];
-        if (!node.dependsOn || node.dependsOn.length === 0) {
-          roots.push(node.id);
-        } else if (!node.requiredBy || node.requiredBy.length === 0) {
-          leaves.push(node.id);
-        }
-      }
-    }
-    function forwardPass(map, nodes, nextRange, startRange) {
-      for (var i = 0, len = nodes.length; i < len; i++) {
-        var node = map[nodes[i]], endRange = forwardPassNode(node, nextRange, startRange);
-        if (endRange && node.requiredBy) {
-          forwardPass(map, node.requiredBy, nextRange, endRange);
-        }
-      }
-    }
-    function forwardPassNode(node, nextRange, startRange) {
-      (node.dependencyStarts || (node.dependencyStarts = [])).push(startRange);
-      if (node.dependsOn && node.dependsOn.length > node.dependencyStarts.length) return undefined;
-      startRange = findMaxRange(node.dependencyStarts);
-      startRange = startRange[0].getTime() === startRange[1].getTime() ? nextRange(startRange[0]) : startRange;
-      node.optimal.earlyStart = startRange[0];
-      var timeLeft = (startRange[1].getTime() - startRange[0].getTime()) / later.MIN, duration = node.duration;
-      while (duration > timeLeft) {
-        duration -= timeLeft;
-        startRange = nextRange(startRange[1]);
-        timeLeft = (startRange[1].getTime() - startRange[0].getTime()) / later.MIN;
-      }
-      node.optimal.earlyFinish = new Date(startRange[0].getTime() + duration * later.MIN);
-      return [ node.optimal.earlyFinish, startRange[1] ];
-    }
-    function backwardPass(map, nodes, prevRange, startRange, depth) {
-      for (var i = 0, len = nodes.length; i < len; i++) {
-        var node = map[nodes[i]], endRange = backwardPassNode(node, prevRange, startRange);
-        if (!node.maxDepth || node.maxDepth < depth) {
-          node.maxDepth = depth || 0;
-          maxDepth = depth > maxDepth ? depth : maxDepth;
-        }
-        if (endRange && node.dependsOn) {
-          backwardPass(map, node.dependsOn, prevRange, endRange, (depth || 0) + 1);
-        }
-      }
-    }
-    function backwardPassNode(node, prevRange, startRange) {
-      (node.requiredByEnds || (node.requiredByEnds = [])).push(startRange);
-      if (node.requiredBy && node.requiredBy.length > node.requiredByEnds.length) return undefined;
-      startRange = findMinRange(node.requiredByEnds);
-      startRange = startRange[0].getTime() === startRange[1].getTime() ? prevRange(startRange[1].getTime() - later.SEC) : startRange;
-      node.optimal.lateFinish = startRange[1];
-      var timeLeft = (startRange[1].getTime() - startRange[0].getTime()) / later.MIN, duration = node.duration;
-      while (duration > timeLeft) {
-        duration -= timeLeft;
-        startRange = prevRange(startRange[0].getTime() - later.SEC);
-        timeLeft = (startRange[1].getTime() - startRange[0].getTime()) / later.MIN;
-      }
-      node.optimal.lateStart = new Date(startRange[1].getTime() - duration * later.MIN);
-      node.optimal.floatDays = calcFloat(new Date(node.optimal.earlyStart), new Date(node.optimal.lateStart));
-      return [ startRange[0], node.optimal.lateStart ];
-    }
-    function calcFloat(start, end) {
-      if (later.D.val(start) === later.D.val(end)) {
-        return (later.h.val(end) - later.h.val(start)) / 24;
-      }
-      return (later.D.start(end).getTime() - later.D.start(start).getTime()) / later.DAY;
-    }
-    function findMaxRange(arr) {
-      var max = arr[0];
-      for (var i = 1, len = arr.length; i < len; i++) {
-        if (arr[i][0] > max[0]) {
-          max = arr[i];
-        }
-      }
-      return max;
-    }
-    function findMinRange(arr) {
-      var min = arr[0];
-      for (var i = 1, len = arr.length; i < len; i++) {
-        if (arr[i][1] < min[1]) {
-          min = arr[i];
-        }
-      }
-      return min;
-    }
-    function memNextRange(schedule) {
-      var cache = {};
-      return function(start) {
-        return cache[start] || (cache[start] = schedule.nextRange(1, start));
-      };
-    }
-    function memPrevRange(schedule) {
-      var cache = {};
-      return function(start) {
-        return cache[start] || (cache[start] = schedule.prevRange(1, start));
-      };
-    }
-    function calcCriticalPath(map, nodes, path) {
-      for (var i = 0, len = nodes.length; i < len; i++) {
-        var node = map[nodes[i]];
-        if (node.optimal.floatDays === 0) {
-          path.push(node.id);
-          if (node.requiredBy) {
-            calcCriticalPath(map, node.requiredBy, path);
-          }
-          break;
-        }
-      }
-    }
-    return {
-      roots: function() {
-        return roots;
-      },
-      leaves: function() {
-        return leaves;
-      },
-      depth: function() {
-        return maxDepth;
-      },
-      items: function() {
-        return tMap;
-      },
-      criticalPath: function() {
-        var path = [];
-        calcCriticalPath(tMap, roots, path);
-        return path;
-      }
+      return cache[start];
     };
   };
   schedule.resources = function(resourceArr) {
@@ -279,5 +127,427 @@ schedule = function() {
   function tasksSplittable(d) {
     return d.splittable;
   }
+  var util = require("util");
+  schedule.dependencyGraph = function(taskArr) {
+    function createDependencyGraph(tasks) {
+      var graph = {
+        tasks: {},
+        roots: [],
+        leaves: [],
+        depth: 0,
+        end: 0
+      };
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        graph.tasks[tasks[i].id] = tasks[i];
+      }
+      setRequiredBy(graph.tasks);
+      setRootsAndLeaves(graph);
+      setDepth(graph, graph.leaves, 0);
+      graph.depth += 1;
+      forwardPass(graph, {}, graph.roots, 0);
+      setEnd(graph, graph.leaves);
+      backwardPass(graph, {}, graph.leaves, graph.end);
+      return graph;
+    }
+    function setEnd(graph, tasks) {
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var finish = graph.tasks[tasks[i]].earlyFinish;
+        graph.end = finish > graph.end ? finish : graph.end;
+      }
+    }
+    function setRequiredBy(tasks) {
+      for (var id in tasks) {
+        var child = tasks[id], dependsOn = child.dependsOn;
+        if (dependsOn) {
+          for (var i = 0, len = dependsOn.length; i < len; i++) {
+            var parent = tasks[dependsOn[i]];
+            (parent.requiredBy || (parent.requiredBy = [])).push(child.id);
+          }
+        }
+      }
+    }
+    function setRootsAndLeaves(graph) {
+      for (var id in graph.tasks) {
+        var task = graph.tasks[id];
+        if (!task.dependsOn || task.dependsOn.length === 0) {
+          graph.roots.push(task.id);
+        }
+        if (!task.requiredBy || task.requiredBy.length === 0) {
+          graph.leaves.push(task.id);
+        }
+      }
+    }
+    function setDepth(graph, tasks, depth) {
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var task = graph.tasks[tasks[i]], dependsOn = task.dependsOn;
+        task.depth = !task.depth || depth > task.depth ? depth : task.depth;
+        graph.depth = depth > graph.depth ? depth : graph.depth;
+        if (dependsOn) {
+          setDepth(graph, dependsOn, task.depth + 1);
+        }
+      }
+    }
+    function forwardPass(graph, depEnds, tasks, start) {
+      updateDependencies(depEnds, tasks, start);
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var tid = tasks[i], task = graph.tasks[tid], dependsOn = task.dependsOn, dep = depEnds[tid];
+        if (!task.earlyFinish && (!dependsOn || dep && dep[0] === dependsOn.length)) {
+          task.earlyStart = dep[1];
+          task.earlyFinish = dep[1] + task.duration;
+          if (task.requiredBy) {
+            forwardPass(graph, depEnds, task.requiredBy, task.earlyFinish);
+          }
+        }
+      }
+    }
+    function backwardPass(graph, depEnds, tasks, end) {
+      updateDependencies(depEnds, tasks, end, true);
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var tid = tasks[i], task = graph.tasks[tid], requiredBy = task.requiredBy, dep = depEnds[tid];
+        if (!requiredBy || dep && dep[0] === requiredBy.length) {
+          task.lateStart = dep[1] - task.duration;
+          task.lateFinish = dep[1];
+          task.floatAmt = task.lateFinish - task.earlyFinish;
+          if (task.dependsOn) {
+            backwardPass(graph, depEnds, task.dependsOn, task.lateStart);
+          }
+        }
+      }
+    }
+    function updateDependencies(deps, tasks, start, rev) {
+      var compare = rev ? function(a, b) {
+        return b > a;
+      } : function(a, b) {
+        return a > b;
+      };
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var id = tasks[i];
+        if (deps[id]) {
+          deps[id][0] = deps[id][0] + 1;
+          deps[id][1] = compare(start, deps[id][1]) ? start : deps[id][1];
+        } else {
+          deps[id] = [ 1, start ];
+        }
+      }
+    }
+    return createDependencyGraph(taskArr);
+  };
+  var later = require("later");
+  schedule.resourceManager = function(resources, earliestDate) {
+    var rMap = buildResourceMap(resources, earliestDate);
+    function buildResourceMap(resArr, startDate) {
+      var map = {};
+      for (var i = 0, len = resArr.length; i < len; i++) {
+        var res = resArr[i], nextFn = memoizedFn(later.schedule(res.schedule).nextRange);
+        map[res.id] = {
+          schedule: clone(res.schedule),
+          next: nextFn,
+          nextAvail: nextFn(startDate)
+        };
+      }
+      return map;
+    }
+    function memoizedFn(fn) {
+      var cache = {};
+      return function(start) {
+        if (cache[start]) return cache[start];
+        var result = fn(1, start);
+        return cache[start] = [ result[0].getTime(), result[1].getTime() ];
+      };
+    }
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+    function getReservation(resArr, schedNext, startTime, min, max) {
+      var reservation, proSched = {
+        next: schedNext,
+        range: schedNext(startTime)
+      }, resSchedArr = [], delays = {};
+      maxTries = 50;
+      initRanges(resArr, proSched.range[0], resSchedArr, delays);
+      while ((reservation = tryReservation(resSchedArr, min, max)) && --maxTries) {
+        if (reservation.success) {
+          applyReservation(reservation);
+          reservation.delays = delays;
+          return reservation;
+        }
+        var start = getEarliestRange(proSched, resSchedArr, delays);
+        updateRanges(proSched, resSchedArr, start);
+      }
+      return {
+        success: false
+      };
+    }
+    function tryReservation(resSchedArr, min, max) {
+      var reservation = {
+        success: false
+      }, resources = [], delays = [], start, end;
+      for (var i = 0, len = resSchedArr.length; i < len; i++) {
+        var resSched = resSchedArr[i], range = resSched.range;
+        if (!range) return undefined;
+        resources.push(resSched.id);
+        start = !start || range[0] > start ? range[0] : start;
+        end = !end || range[1] < end ? range[1] : end;
+      }
+      var duration = (end - start) / later.MIN;
+      if (duration >= min) {
+        reservation = {
+          resources: resources,
+          start: start,
+          duration: max && duration > max ? max : duration,
+          delays: delays,
+          success: true
+        };
+      }
+      return reservation;
+    }
+    function updateRanges(proSched, resSchedArr, startTime) {
+      if (proSched.range[1] <= startTime) {
+        proSched.range = proSched.next(startTime);
+      }
+      updateResRanges(resSchedArr, startTime);
+    }
+    function updateResRanges(resSchedArr, startTime) {
+      for (var i = 0, len = resSchedArr.length; i < len; i++) {
+        var res = resSchedArr[i];
+        if (res.range[1] <= startTime) {
+          if (res.subRanges) {
+            updateResRanges(res.subRanges, startTime);
+            setEarliestSubRange(res);
+          } else {
+            res.range = rMap[res.id].next(startTime);
+          }
+        }
+      }
+    }
+    function setEarliestSubRange(resSched) {
+      var minId, minRange;
+      for (var i = 0, len = resSched.subRanges.length; i < len; i++) {
+        var sub = resSched.subRanges[i];
+        if (!minId || sub.range[0] < minRange[0]) {
+          minId = sub.id;
+          minRange = sub.range;
+        }
+      }
+      resSched.id = minId;
+      resSched.range = minRange;
+    }
+    function getEarliestRange(proSched, resSchedArr, delays) {
+      var latest = proSched.range[1];
+      for (var i = 0, len = resSchedArr.length; i < len; i++) {
+        var resSched = resSchedArr[i], start = resSched.range[0], end = resSched.range[1];
+        latest = end < latest ? end : latest;
+      }
+      return latest;
+    }
+    function getLongestDelay(subDelays) {
+      var latest, lid;
+      for (var id in subDelays) {
+        var available = subDelays[id].available;
+        if (!latest || available < latest) {
+          latest = available;
+          lid = id;
+        }
+      }
+      return lid;
+    }
+    function initRanges(resArr, start, ranges, delays) {
+      for (var i = 0, len = resArr.length; i < len; i++) {
+        var resId = resArr[i];
+        if (Array.isArray(resId)) {
+          var subRanges = [], subDelays = {};
+          initRanges(resId, start, subRanges, subDelays);
+          var longDelay = getLongestDelay(subDelays);
+          delays[longDelay] = subDelays[longDelay];
+          var resSched = {
+            subRanges: subRanges
+          };
+          setEarliestSubRange(resSched);
+          ranges.push(resSched);
+        } else {
+          var res = rMap[resId], range = res.nextAvail[1] >= start ? res.nextAvail : res.next(start);
+          if (range[0] > start) {
+            delays[resId] = {
+              needed: new Date(start),
+              available: new Date(range[0])
+            };
+          }
+          ranges.push({
+            id: resId,
+            range: range
+          });
+        }
+      }
+    }
+    function applyReservation(reservation) {
+      var start = reservation.start, end = reservation.start + reservation.duration * later.MIN;
+      for (var i = 0, len = reservation.resources.length; i < len; i++) {
+        var res = rMap[reservation.resources[i]];
+        if (start === res.nextAvail[0]) {
+          res.nextAvail = res.next(end);
+        } else {
+          if (!res.schedule.exceptions) res.schedule.exceptions = [];
+          res.schedule.exceptions.push({
+            fd_a: [ start ],
+            fd_b: [ end ]
+          });
+          res.next = memoizedFn(later.schedule(res.schedule).nextRange);
+        }
+      }
+    }
+    return {
+      resourceMap: function() {
+        return rMap;
+      },
+      makeReservation: function(resArr, schedNext, start, min, max) {
+        var d = start ? new Date(start) : new Date();
+        if (!d || !d.getTime()) throw new Error("Invalid start date.");
+        return getReservation(resArr, schedNext, start.getTime(), min || 1, max);
+      },
+      moveStartDate: function(start) {
+        var startTime = start.getTime();
+        for (var id in rMap) {
+          var res = rMap[id];
+          if (res.schedule.exceptions) {
+            var curExceptions = res.schedule.exceptions, nextExceptions = [];
+            for (var i = 0, len = curExceptions.length; i < len; i++) {
+              if (!curExceptions[i].fd_b || curExceptions[i].fd_b > startTime) {
+                nextExceptions.push(curExceptions[i]);
+              }
+            }
+            res.schedule.exceptions = nextExceptions;
+            res.next = memoizedFn(later.schedule(res.schedule).nextRange);
+          }
+          if (res.nextAvail[0] < startTime) {
+            res.nextAvail = res.next(start);
+          }
+        }
+      }
+    };
+  };
+  var later = require("later");
+  schedule.schedule = function(graph, schedDef, startDate, resources) {
+    var scheduledTasks = {}, order = [], sched = later.schedule(schedDef), nextFn = memoizedFn(sched.nextRange), prevFn = memoizedFn(sched.prevRange);
+    function buildSchedule() {
+      forwardPass(graph.roots, nextFn(startDate));
+      var end = getEnd(graph, graph.leaves);
+      backwardPass(graph.leaves, prevFn(end));
+      return scheduledTasks;
+    }
+    function getEnd(graph, tasks) {
+      var end = 0;
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var finish = scheduledTasks[tasks[i]].earlyFinish;
+        end = finish > end ? finish : end;
+      }
+      return end;
+    }
+    function sortActive(activeArr) {
+      activeArr.sort(function(a, b) {
+        return graph.tasks[b].floatAmt > graph.tasks[a].floatAmt;
+      });
+    }
+    function forwardPass(rootTasks, startRange) {
+      var activeArr = [], deps = {};
+      updateDependencies(activeArr, deps, rootTasks, startRange);
+      while (activeArr.length) {
+        sortActive(activeArr);
+        var t = graph.tasks[activeArr.pop()], endRange = forwardPassTask(activeArr, t, deps);
+        if (t.requiredBy) {
+          updateDependencies(activeArr, deps, t.requiredBy, endRange);
+        }
+      }
+    }
+    function forwardPassTask(activeArr, t, deps) {
+      var startRange = deps[t.id][1], start = startRange[0], end = startRange[1], scheduledTask = {
+        earlySchedule: [],
+        duration: t.duration
+      };
+      startRange = start.getTime() === end.getTime() ? nextFn(end) : startRange;
+      var timeLeft = (end.getTime() - start.getTime()) / later.MIN, duration = t.duration;
+      scheduledTask.earlyStart = start;
+      while (duration > timeLeft) {
+        scheduledTask.earlySchedule.push(block(start, end, timeLeft));
+        duration -= timeLeft;
+        startRange = nextFn(end);
+        start = startRange[0];
+        end = startRange[1];
+        timeLeft = (end.getTime() - start.getTime()) / later.MIN;
+      }
+      scheduledTask.earlyFinish = new Date(start.getTime() + duration * later.MIN);
+      scheduledTask.earlySchedule.push(block(start, scheduledTask.earlyFinish, duration));
+      scheduledTasks[t.id] = scheduledTask;
+      order.push(t.id);
+      return [ scheduledTask.earlyFinish, end ];
+    }
+    function backwardPass(leafTasks, startRange) {
+      var activeArr = [], deps = {};
+      updateDependencies(activeArr, deps, leafTasks, startRange, true);
+      while (order.length) {
+        var t = graph.tasks[order.pop()], endRange = backwardPassTask(activeArr, t, deps);
+        if (t.dependsOn) {
+          updateDependencies(activeArr, deps, t.dependsOn, endRange, true);
+        }
+      }
+    }
+    function backwardPassTask(activeArr, t, deps) {
+      var startRange = deps[t.id][1], start = startRange[0], end = startRange[1], scheduledTask = scheduledTasks[t.id];
+      scheduledTask.lateSchedule = [];
+      startRange = start.getTime() === end.getTime() ? prevFn(start.getTime() - later.SEC) : startRange;
+      start = startRange[0];
+      end = startRange[1];
+      var timeLeft = (end.getTime() - start.getTime()) / later.MIN, duration = t.duration;
+      scheduledTask.lateFinish = end;
+      while (duration > timeLeft) {
+        scheduledTask.lateSchedule.push(block(start, end, timeLeft));
+        duration -= timeLeft;
+        startRange = prevFn(start.getTime() - later.SEC);
+        start = startRange[0];
+        end = startRange[1];
+        timeLeft = (end.getTime() - start.getTime()) / later.MIN;
+      }
+      scheduledTask.lateStart = new Date(end.getTime() - duration * later.MIN);
+      scheduledTask.lateSchedule.push(block(scheduledTask.lateStart, end, duration));
+      scheduledTask.floatAmt = calcFloat(scheduledTask.earlyFinish, scheduledTask.lateFinish);
+      return [ start, scheduledTask.lateStart ];
+    }
+    function calcFloat(start, end) {
+      return (end.getTime() - start.getTime()) / later.DAY;
+    }
+    function updateDependencies(activeArr, deps, arr, range, rev) {
+      var compare = rev ? function(a, b) {
+        return b > a;
+      } : function(a, b) {
+        return a > b;
+      }, countProp = rev ? "requiredBy" : "dependsOn", rangeId = rev ? 1 : 0;
+      for (var i = 0, len = arr.length; i < len; i++) {
+        var tid = arr[i];
+        if (deps[tid]) {
+          deps[tid][0] += 1;
+          deps[tid][1] = compare(range[rangeId], deps[tid][1][rangeId]) ? range : deps[tid][1];
+        } else {
+          deps[tid] = [ 1, range ];
+        }
+        var task = graph.tasks[tid], count = task[countProp] ? task[countProp].length : 0;
+        if (deps[tid][0] >= count) {
+          activeArr.push(tid);
+        }
+      }
+    }
+    function block(start, end, duration) {
+      return {
+        start: start,
+        end: end,
+        duration: duration
+      };
+    }
+    function memoizedFn(fn) {
+      var cache = {};
+      return function(start) {
+        return cache[start] || (cache[start] = fn(1, start));
+      };
+    }
+    return buildSchedule();
+  };
   return schedule;
 }();
