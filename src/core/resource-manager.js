@@ -1,21 +1,37 @@
 var later = require('later');
 
-schedule.resourceManager = function(resources, earliestDate) {
+schedule.resourceManager = function(resources, requiredResources, startDate) {
 
-  var rMap = buildResourceMap(resources, earliestDate);
+  var defaultSched = {schedules: {Y_a: [later.Y.val(startDate)]}},
+      rMap = buildResourceMap(resources, requiredResources, startDate);
 
-  function buildResourceMap(resArr, startDate) {
-    var map = {};
+  function buildResourceMap(resArr, requiredResources, start) {
+    var map = {}, i, len;
 
-    for(var i = 0, len = resArr.length; i < len; i++) {
+    for(i = 0, len = resArr.length; i < len; i++) {
       var res = resArr[i],
           nextFn = memoizedFn(later.schedule(res.schedule).nextRange);
 
       map[res.id] = {
         schedule: clone(res.schedule),
         next: nextFn,
-        nextAvail: nextFn(startDate)
+        nextAvail: nextFn(start)
       };
+    }
+
+    for(i = 0, len = requiredResources.length; i < len; i++) {
+      var reqRes = requiredResources[i];
+
+      // a required resource was not defined, assume that it is always
+      // available and add it to the map
+      if(!map[reqRes]) {
+
+        map[reqRes] = {
+          schedule: defaultSched,
+          next: memoizedFn(later.schedule(defaultSched).nextRange),
+          nextAvail: start
+        };
+      }
     }
 
     return map;

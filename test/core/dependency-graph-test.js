@@ -314,6 +314,7 @@ describe('Dependency Graph', function() {
               floatAmt: 0 } },
         roots: [ 'A' ],
         leaves: [ 'J' ],
+        resources: [],
         depth: 5,
         end: 17 });
 

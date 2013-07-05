@@ -23,6 +23,7 @@ schedule-cov.js: schedule.js
 		--no-instrument=util/index.js \
 		--no-instrument=date/index.js \
 		--no-instrument=core/index.js \
+		--no-instrument=sort/index.js \
 		--no-instrument=start.js \
 		--no-instrument=end.js \
 		--no-instrument=component.js \

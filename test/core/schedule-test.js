@@ -3,88 +3,199 @@ var schedule = require('../../index'),
     should = require('should'),
     util = require('util');
 
-describe.skip('Schedule', function() {
+describe('Schedule', function() {
 
-  it('should do something', function() {
+  // project schedule setup
+  var projSched = {schedules: [{h_a: [8], h_b: [18]}]};
 
-    var tasks = [
-          {id: 'A', duration: 480, resources: ['A']},
-          {id: 'B', duration: 240, dependsOn: ['A'], resources: ['A'] },
-          {id: 'C', duration: 120, dependsOn: ['A'], resources: ['A'] },
-          {id: 'D', duration: 360, dependsOn: ['A'], resources: ['A'] },
-          {id: 'E', duration: 120, dependsOn: ['B', 'C'], resources: ['A'] },
-          {id: 'F', duration: 420, dependsOn: ['C'], resources: ['A'] },
-          {id: 'G', duration: 240, dependsOn: ['E'], resources: ['A'] },
-          {id: 'H', duration: 480, dependsOn: ['E', 'F'], resources: ['A'] },
-          {id: 'I', duration: 240, dependsOn: ['D'], resources: ['A'] },
-          {id: 'J', duration: 240, dependsOn: ['G','H','I'], resources: ['A'] }
-        ];
+  // set to use local time
+  schedule.date.localTime();
 
-    var resources = [
-          {id: 'A', schedule: {schedules: [{dw: [2,3,4,5,6], h_a: [8], h_b: [16]}]}},
-          {id: 'B', schedule: {schedules: [{dw: [2,3], h_a: [10], h_b: [14]}]}},
-          {id: 'C', schedule: {schedules: [{dw: [5,6], h_a: [8], h_b: [12]}]}}
-        ];
+  describe('forward pass with vanilla tasks', function() {
 
-  // quick and dirty function memoization
-/*  function memoizedFn(fn) {
-    var cache = {};
+    it('should schedule a single task at first available time', function() {
+      var tasks = [
+            {id: 'A', duration: 100}
+          ],
+          startDate = new Date(2013, 2, 21);
 
-    return function(start) {
-      if(cache[start]) return cache[start];
-      var result = fn(1, start);
-      return (cache[start] = [result[0].getTime(), result[1].getTime()]);
-    };
-  }
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
 
-    var resManager = schedule.resourceManager(resources, new Date(2013, 2, 1)),
-        sched = {schedules: [{dw: [2,3,4,5,6], h_a: [8], h_b: [16]}]},
-        sNext = memoizedFn(later.schedule(sched).nextRange),
-        neededRes = [['B','C'], 'A'],
-        start = new Date(2013, 2, 1);
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.A.duration.should.eql(100);
+    });
 
-    var time = process.hrtime();
-    var reservation = resManager.makeReservation(neededRes, sNext, start, 60, 280);
-    for(var i = 0; i < 5; i++) {
-      start = new Date(reservation.start + (reservation.duration * later.MIN));
-      resManager.moveStartDate(start);
-      reservation = resManager.makeReservation(neededRes, sNext, start, 60, 280);
-      console.log(reservation);
-      console.log('-------------------');
-    }
-    var diff = process.hrtime(time);
-    console.log('benchmark took %d nanoseconds', diff[0] * 1e9 + diff[1]);*/
+    it('should schedule dependent tasks after one another', function() {
+      var tasks = [
+            {id: 'A', duration: 100},
+            {id: 'B', duration: 100, dependsOn: ['A']}
+          ],
+          startDate = new Date(2013, 2, 21);
 
-/*    var time = process.hrtime();
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
 
-    var next = resManager.next(['A', 'B'], sNext, new Date(2013, 2, 1), 60, 280);
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.A.duration.should.eql(100);
 
-    for(var i = 0; i < 5; i++) {
-      next = resManager.next(['A', 'B'], sNext, next[1], 60, 280);
-      resManager.moveStartDate(next[1]);
-      console.log(next);
-    }
-    var diff = process.hrtime(time);
+      s.B.earlyStart.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.B.earlyFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
+      s.B.duration.should.eql(100);
+    });
 
-    console.log('benchmark took %d nanoseconds', diff[0] * 1e9 + diff[1]);*/
+    it('should schedule sibling tasks in parallel', function() {
+      var tasks = [
+            {id: 'A', duration: 100},
+            {id: 'B', duration: 100, dependsOn: ['A']},
+            {id: 'C', duration: 100, dependsOn: ['A']}
+          ],
+          startDate = new Date(2013, 2, 21);
 
-//    console.log(later.fd.prev(new Date(2012, 3, 4), (new Date(2013, 2, 1)).getTime()));
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
 
+      s.B.earlyStart.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.B.earlyFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
+      s.B.duration.should.eql(100);
 
+      s.C.earlyStart.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.C.earlyFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
+      s.C.duration.should.eql(100);
+    });
 
-    var graph = schedule.dependencyGraph(tasks),
-        sched = {schedules: [{dw: [2,3,4,5,6], h_a: [8], h_b: [16]}]},
-        start = new Date(2013, 2, 21);
+    it('should wait for all dependencies to complete before scheduling dependent task', function() {
+      var tasks = [
+            {id: 'A', duration: 100},
+            {id: 'B', duration: 100, dependsOn: ['A']},
+            {id: 'C', duration: 200, dependsOn: ['A']},
+            {id: 'D', duration: 100, dependsOn: ['B', 'C']}
+          ],
+          startDate = new Date(2013, 2, 21);
 
-    //var time = process.hrtime();
-   // var optimal = schedule.schedule(graph, sched, start);
-    //var diff = process.hrtime(time);
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
 
-    //console.log(util.inspect(optimal, { depth: null }));
-    //console.log('benchmark took %d nanoseconds', diff[0] * 1e9 + diff[1]);
+      s.D.earlyStart.should.eql((new Date(2013, 2, 21, 13, 0, 0)).getTime());
+      s.D.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 40, 0)).getTime());
+      s.D.duration.should.eql(100);
+    });
 
 
+    it.only('should fail to schedule tasks with circular dependencies', function() {
+      var tasks = [
+            {id: 'A', duration: 100},
+            {id: 'B', duration: 100, dependsOn: ['A', 'C']},
+            {id: 'C', duration: 200, dependsOn: ['D']},
+            {id: 'D', duration: 100, dependsOn: ['B']}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate);
+
+      console.log(util.inspect(s, {depth: null}));
+
+      should.not.exist(s.scheduledTasks.B);
+      should.not.exist(s.scheduledTasks.C);
+      should.not.exist(s.scheduledTasks.D);
+      s.failedTasks.length.should.eql(3);
+      s.success.should.eql(false);
+    });
+
+
+    it('should split tasks across multiple days when needed', function() {
+      var tasks = [
+            {id: 'A', duration: 720}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.schedule.length.should.eql(2);
+      s.A.schedule[0].duration.should.eql(600);
+      s.A.schedule[1].duration.should.eql(120);
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 22, 10, 0, 0)).getTime());
+      s.A.duration.should.eql(720);
+    });
+
+    it('should go to next range when at end of range', function() {
+      var tasks = [
+            {id: 'A', duration: 600},
+            {id: 'B', duration: 120, dependsOn: ['A']}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 18, 0, 0)).getTime());
+      s.A.duration.should.eql(600);
+
+      s.B.earlyStart.should.eql((new Date(2013, 2, 22, 8, 0, 0)).getTime());
+      s.B.earlyFinish.should.eql((new Date(2013, 2, 22, 10, 0, 0)).getTime());
+      s.B.duration.should.eql(120);
+    });
   });
 
+  describe('backward pass with vanilla tasks', function() {
+
+    it('should set late finish to early finish for single task', function() {
+      var tasks = [
+            {id: 'A', duration: 100}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+    });
+
+    it('should set late finish for dependent tasks', function() {
+      var tasks = [
+            {id: 'A', duration: 100},
+            {id: 'B', duration: 100, dependsOn: ['A']}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
+      s.B.lateFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
+    });
+
+    it('should set late finish to latest leaf node', function() {
+      var tasks = [
+            {id: 'A', duration: 60},
+            {id: 'B', duration: 60, dependsOn: ['A']},
+            {id: 'C', duration: 120, dependsOn: ['A']},
+            {id: 'D', duration: 60, dependsOn: ['C']}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 0, 0)).getTime());
+      s.B.lateFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+      s.C.lateFinish.should.eql((new Date(2013, 2, 21, 11, 0, 0)).getTime());
+      s.D.lateFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+    });
+
+    it('should set float amount in days', function() {
+      var tasks = [
+            {id: 'A', duration: 60},
+            {id: 'B', duration: 60, dependsOn: ['A']},
+            {id: 'C', duration: 120, dependsOn: ['A']},
+            {id: 'D', duration: 60, dependsOn: ['C']}
+          ],
+          startDate = new Date(2013, 2, 21);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.floatAmt.should.eql(0);
+      s.B.floatAmt.should.eql(120);
+      s.C.floatAmt.should.eql(0);
+      s.D.floatAmt.should.eql(0);
+    });
+
+  });
 
 });

@@ -1,5 +1,4 @@
 
-var util = require('util');
 
 schedule.dependencyGraph = function(taskArr) {
 
@@ -8,6 +7,7 @@ schedule.dependencyGraph = function(taskArr) {
       tasks: {},
       roots: [],
       leaves: [],
+      resources: [],
       depth: 0,
       end : 0
     };
@@ -16,6 +16,7 @@ schedule.dependencyGraph = function(taskArr) {
       graph.tasks[tasks[i].id] = tasks[i];
     }
 
+    setResources(graph);
     setRequiredBy(graph.tasks);
     setRootsAndLeaves(graph);
 
@@ -28,6 +29,22 @@ schedule.dependencyGraph = function(taskArr) {
 
     return graph;
   }
+
+
+  function setResources(graph) {
+    for(var id in graph.tasks) {
+      var task = graph.tasks[id];
+      if(task.resources) {
+        for(var i = 0, len = task.resources.length; i < len; i++) {
+          var resId = task.resources[i];
+          if(graph.resources.indexOf(resId) === -1) {
+            graph.resources.push(resId);
+          }
+        }
+      }
+    }
+  }
+
 
   function setEnd(graph, tasks) {
     for(var i = 0, len = tasks.length; i < len; i++) {

@@ -3,6 +3,7 @@ var schedule = require('../../index'),
     should = require('should'),
     util = require('util');
 
+
 describe('Resource Manager', function() {
 
   // resource setup
@@ -24,7 +25,7 @@ describe('Resource Manager', function() {
 
 
   describe('resource map', function() {
-    var mgr = schedule.resourceManager(resources, startDate);
+    var mgr = schedule.resourceManager(resources, [], startDate);
 
     it('should contain all of the resources', function() {
       var map = mgr.resourceMap();
@@ -67,7 +68,7 @@ describe('Resource Manager', function() {
   describe('make reservation', function() {
 
     it('should include requested resource', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['A'], projNext, startDate);
 
       res.resources.should.eql(['A']);
@@ -75,7 +76,7 @@ describe('Resource Manager', function() {
     });
 
     it('should include requested resource when multiple', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['A', 'B'], projNext, startDate);
 
       res.resources.should.eql(['A', 'B']);
@@ -83,7 +84,7 @@ describe('Resource Manager', function() {
     });
 
     it('should include only reserved resources with OR', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation([['A', 'B']], projNext, startDate);
 
       res.resources.should.eql(['A']);
@@ -91,7 +92,7 @@ describe('Resource Manager', function() {
     });
 
     it('should reserve resource at earliest available time', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['A'], projNext, startDate);
 
       res.start.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
@@ -99,7 +100,7 @@ describe('Resource Manager', function() {
     });
 
     it('should reserve multiple resource at earliest available overlap', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['A', 'B'], projNext, startDate);
 
       res.start.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
@@ -107,7 +108,7 @@ describe('Resource Manager', function() {
     });
 
     it('should reserve earliest available resource on OR', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation([['A', 'B']], projNext, startDate);
 
       res.start.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
@@ -115,7 +116,7 @@ describe('Resource Manager', function() {
     });
 
     it('should reserve earliest available resource on multiple AND', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['A', 'B', 'E'], projNext, startDate);
 
       res.start.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
@@ -124,7 +125,7 @@ describe('Resource Manager', function() {
 
     it('should reserve for minimum duration specified', function() {
       var d = new Date(2013, 2, 21, 12, 0, 0),
-          mgr = schedule.resourceManager(resources, d),
+          mgr = schedule.resourceManager(resources, [], d),
           res = mgr.makeReservation(['B'], projNext, d, 240);
 
       res.start.should.eql((new Date(2013, 2, 22, 10, 0, 0)).getTime());
@@ -134,7 +135,7 @@ describe('Resource Manager', function() {
 
     it('should reserve for minimum duration specified using OR', function() {
       var d = new Date(2013, 2, 21, 16, 0, 0),
-          mgr = schedule.resourceManager(resources, d),
+          mgr = schedule.resourceManager(resources, [], d),
           res = mgr.makeReservation([['B', 'D']], projNext, d, 240);
 
       res.start.should.eql((new Date(2013, 2, 22, 10, 0, 0)).getTime());
@@ -144,7 +145,7 @@ describe('Resource Manager', function() {
 
     it('should reserve for maximum duration specified', function() {
       var d = new Date(2013, 2, 21, 12, 0, 0),
-          mgr = schedule.resourceManager(resources, d),
+          mgr = schedule.resourceManager(resources, [], d),
           res = mgr.makeReservation(['B'], projNext, d, 1, 30);
 
       res.start.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
@@ -153,14 +154,14 @@ describe('Resource Manager', function() {
     });
 
     it('success should be false if reservation could not be made', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           res = mgr.makeReservation(['B', 'D'], projNext, startDate);
 
       res.success.should.eql(false);
     });
 
     it('should maintain consecutive reservations', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           resA = mgr.makeReservation(['A'], projNext, startDate, 1, 240),
           resB = mgr.makeReservation(['A'], projNext, startDate, 1, 240);
 
@@ -174,7 +175,7 @@ describe('Resource Manager', function() {
     });
 
     it('should maintain non-consecutive reservations', function() {
-      var mgr = schedule.resourceManager(resources, startDate),
+      var mgr = schedule.resourceManager(resources, [], startDate),
           resA = mgr.makeReservation(['A', 'B'], projNext, startDate, 1, 240),
           resB = mgr.makeReservation(['A'], projNext, startDate, 1, 120);
 
@@ -190,7 +191,7 @@ describe('Resource Manager', function() {
   });
 
   describe('move start date', function() {
-    var mgr = schedule.resourceManager(resources, startDate),
+    var mgr = schedule.resourceManager(resources, [], startDate),
         resA = mgr.makeReservation(['A', 'B'], projNext, startDate, 1, 240),
         resB = mgr.makeReservation(['A', 'B'], projNext, startDate, 1, 120),
         resC = mgr.makeReservation(['A', 'B'], projNext, startDate, 1, 240),
