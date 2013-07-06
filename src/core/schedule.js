@@ -1,138 +1,141 @@
 
 
-
 schedule.schedule = function(tasks, resources, sched, startDate, endDate) {
 
   var taskGraph = schedule.dependencyGraph(tasks),
-      resMgr = schedule.resourceManager(resources, taskGraph.resources, startDate),
-      schedNext = schedule.memoizedRangeFn(later.schedule(sched).nextRange),
+      resMgr = schedule.resourceManager(resources, startDate),
       scheduledTasks = {};
 
-
   function generateSchedule() {
-    var end, failedTasks = [];
+    var range, failedTasks = [], i, len;
 
-    forwardPass(taskGraph.roots, schedNext(startDate));
-
-    end = getEnd(taskGraph.leaves);
-    backwardPass(taskGraph.leaves, end);
-
-    for(var i = 0, len = tasks.length; i < len; i++) {
-      if(!scheduledTasks[tasks[i].id]) {
-        failedTasks.push(tasks[i].id);
+    // make sure all the task resources are in the resource map
+    for(i = 0, len = taskGraph.resources.length; i < len; i++) {
+      var resId = taskGraph.resources[i];
+      if(!resMgr.resourceMap()[resId]) {
+        resMgr.setResource({id: resId}, startDate);
       }
     }
+
+    // add the project schedule
+    resMgr.setResource({id: '_proj', schedule: sched}, startDate);
+
+    // add the task schedules
+    for(i = 0, len = tasks.length; i < len; i++) {
+      var task = tasks[i];
+      resMgr.setResource({id: '_task' + task.id, schedule: task.schedule}, startDate);
+    }
+
+    forwardPass(taskGraph.roots);
+    range = getSummary(tasks, failedTasks);
+    backwardPass(taskGraph.leaves, range[1]);
 
     return {
       scheduledTasks: scheduledTasks,
       failedTasks: failedTasks.length ? failedTasks : null,
       success: failedTasks.length === 0,
-      end: end
+      start: range[0],
+      end: range[1]
     };
   }
 
-
-  function getEnd(taskIds) {
-    var end;
-
-    for(var i = 0, len = taskIds.length; i < len; i++) {
-      var sTask = scheduledTasks[taskIds[i]];
-
-      if(!end || (sTask.earlyFinish > end)) {
-        end = sTask.earlyFinish;
-      }
-    }
-
-    return end;
-  }
-
-
-  function forwardPass(roots, startRange) {
-    var readyTasks = [],
-        dependencies = {}; // holds count and date range of met dependencies
-
-    updateDependencies(readyTasks, dependencies, roots, startRange);
-    while(readyTasks.length) {
-      schedule.sort.tasks(taskGraph, readyTasks);
-      var task = taskGraph.tasks[readyTasks.pop()],
-          endRange = forwardPassTask(task, dependencies[task.id][1]);
-
-      if(task.requiredBy) {
-        updateDependencies(readyTasks, dependencies, task.requiredBy, endRange);
-      }
-    }
-  }
-
-  function updateDependencies(readyTasks, dependencies, tasks, dateRange) {
-    // correct if dateRange remaining length is 0
-    if(dateRange[0] === dateRange[1]) {
-      dateRange = schedNext(dateRange[1]);
-    }
+  function getSummary(tasks, failedTasks) {
+    var start, end;
 
     for(var i = 0, len = tasks.length; i < len; i++) {
+      var t = scheduledTasks[tasks[i].id];
+      if(!t) {
+        failedTasks.push(tasks[i].id);
+        continue;
+      }
+
+      start = !start || t.earlyStart < start ? t.earlyStart : start;
+      end = !end || t.earlyFinish > end ? t.earlyFinish : end;
+    }
+
+    return [start, end];
+  }
+
+
+  function forwardPass(roots) {
+    var readyTasks = roots.slice(0),
+        dependencies = {}; // holds count and earliest start date of dependencies
+
+    while(readyTasks.length) {
+      schedule.sort.tasks(taskGraph, readyTasks);
+
+      var task = taskGraph.tasks[readyTasks.pop()],
+          start = dependencies[task.id] ? dependencies[task.id][1] : startDate.getTime(),
+          end = forwardPassTask(task, start);
+
+      if(end && task.requiredBy) {
+        updateDependencies(readyTasks, dependencies, task.requiredBy, end);
+        resMgr.moveStartDate(getMinStart(dependencies)); // clean up expired exceptions
+      }
+    }
+  }
+
+  function getMinStart(dependencies) {
+    var min;
+    for(var id in dependencies) {
+      if(!min || min > dependencies[id][1]) {
+        min = dependencies[id][1];
+      }
+    }
+    return min;
+  }
+
+
+  function updateDependencies(readyTasks, dependencies, tasks, end) {
+    for(var i = 0, len = tasks.length; i < len; i++) {
       var tid = tasks[i],
-          task = taskGraph.tasks[tid],
-          reqDepCount = task.dependsOn ? task.dependsOn.length : 0,
-          metDeps = dependencies[tid];
+          dependsOn = taskGraph.tasks[tid].dependsOn,
+          metDeps = dependencies[tid] || (dependencies[tid] = [0, 0]);
 
-      if(metDeps) {
-        metDeps[0] += 1;
-        metDeps[1] = dateRange[0] > metDeps[1][0] ? dateRange : metDeps[1];
-      }
-      else {
-        dependencies[tid] = [1, dateRange];
-      }
+      metDeps[0] += 1;
+      metDeps[1] = end > metDeps[1] ? end : metDeps[1];
 
-      if(dependencies[tid][0] >= reqDepCount) {
+      if(!dependsOn || metDeps[0] >= dependsOn.length) {
         readyTasks.push(tid);
       }
     }
   }
 
 
-  function forwardPassTask(task, startRange) {
-
-    var duration = task.duration,
-        start, end, timeLeft, taskEnd,
+  function forwardPassTask(task, start) {
+    var resAll = ['_proj', '_task' + task.id],
+        resources = task.resources ? resAll.concat(task.resources) : resAll;
+        duration = task.duration,
+        next = start,
         scheduledTask = {schedule: [], duration: task.duration};
 
-    scheduledTask.earlyStart = startRange[0];
+    while(duration) {
+      var r = resMgr.makeReservation(resources, next, task.minSchedule || 1, duration);
+      if(!r.success) return undefined;
 
-    while(duration > 0) {
-      start = startRange[0];
-      end = startRange[1];
-      timeLeft = (end - start) / later.MIN;
-      taskEnd = timeLeft > duration ? start + (duration * later.MIN) : end;
-      duration -= timeLeft;
-
-      scheduledTask.schedule.push({
-        start: start,
-        end: taskEnd,
-        duration: (taskEnd - start) / later.MIN
-      });
-
-      if(duration > 0) {
-        startRange = schedNext(end);
-      }
+      scheduledTask.earlyStart = scheduledTask.earlyStart || r.start;
+      scheduledTask.schedule.push(r);
+      duration -= r.duration;
+      next = r.end;
     }
 
-    scheduledTask.earlyFinish = taskEnd;
-
+    scheduledTask.earlyFinish = next;
     scheduledTasks[task.id] = scheduledTask;
-    return [taskEnd, end];
+
+    return next;
   }
 
 
   function backwardPass(tasks, finishDate) {
     for(var i = 0, len = tasks.length; i < len; i++) {
-      var task = taskGraph.tasks[tasks[i]],
-          sTask = scheduledTasks[tasks[i]];
+      var sTask = scheduledTasks[tasks[i]],
+          dependsOn = taskGraph.tasks[tasks[i]].dependsOn;
 
       sTask.lateFinish = finishDate;
       sTask.floatAmt = (sTask.lateFinish - sTask.earlyFinish) / later.MIN;
 
-      if(task.dependsOn) {
-        backwardPass(task.dependsOn, sTask.earlyStart);
+      if(dependsOn) {
+        backwardPass(dependsOn, sTask.earlyStart);
       }
     }
   }

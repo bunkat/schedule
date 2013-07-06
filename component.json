@@ -1,5 +1,5 @@
 {
   "name": "schedule",
-  "version": "1.0.0",
+  "version": "0.6.0",
   "main": "./schedule.js"
 }

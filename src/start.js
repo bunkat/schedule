@@ -6,4 +6,6 @@
 *     http://bunkat.github.com/later
 */
 schedule = (function() {
-  var schedule = {version: "1.0.0"}; // semver
+  var schedule = {version: "0.6.0"}; // semver
+
+  var later = !later && require ? require('later') : later;

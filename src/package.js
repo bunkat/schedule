@@ -19,7 +19,7 @@ console.log(JSON.stringify({
     }
   },
   "dependencies": {
-    "later": ">=1.1.0"
+    "later": ">=1.1.2"
   },
   "devDependencies": {
     "smash": "~0.0.8",

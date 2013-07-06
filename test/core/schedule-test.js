@@ -80,7 +80,7 @@ describe('Schedule', function() {
     });
 
 
-    it.only('should fail to schedule tasks with circular dependencies', function() {
+    it('should fail to schedule tasks with circular dependencies', function() {
       var tasks = [
             {id: 'A', duration: 100},
             {id: 'B', duration: 100, dependsOn: ['A', 'C']},
@@ -90,8 +90,6 @@ describe('Schedule', function() {
           startDate = new Date(2013, 2, 21);
 
       var s = schedule.schedule(tasks, [], projSched, startDate);
-
-      console.log(util.inspect(s, {depth: null}));
 
       should.not.exist(s.scheduledTasks.B);
       should.not.exist(s.scheduledTasks.C);
@@ -194,6 +192,113 @@ describe('Schedule', function() {
       s.B.floatAmt.should.eql(120);
       s.C.floatAmt.should.eql(0);
       s.D.floatAmt.should.eql(0);
+    });
+
+  });
+
+  describe('minimum schedule length', function() {
+
+    it('should not schedule a task shorter than minimum schedule length', function() {
+      var tasks = [
+            {id: 'A', duration: 240, minSchedule: 120}
+          ],
+          startDate = new Date(2013, 2, 21, 17, 0, 0);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.schedule.length.should.eql(1);
+      s.A.schedule[0].duration.should.eql(240);
+      s.A.earlyStart.should.eql((new Date(2013, 2, 22, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 22, 12, 0, 0)).getTime());
+      s.A.duration.should.eql(240);
+    });
+
+    it('should split tasks if minSchedule is met', function() {
+      var tasks = [
+            {id: 'A', duration: 240, minSchedule: 120}
+          ],
+          startDate = new Date(2013, 2, 21, 16, 0, 0);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.schedule.length.should.eql(2);
+      s.A.schedule[0].duration.should.eql(120);
+      s.A.schedule[1].duration.should.eql(120);
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 16, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 22, 10, 0, 0)).getTime());
+      s.A.duration.should.eql(240);
+    });
+
+  });
+
+  describe('task priority', function() {
+
+    it('should schedule higher priority tasks first', function() {
+      var tasks = [
+            {id: 'A', duration: 120, resources: ['A'], priority: 0},
+            {id: 'B', duration: 120, resources: ['A'], priority: 100},
+            {id: 'C', duration: 120, resources: ['A'], priority: 50}
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
+
+      s.B.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.B.earlyFinish.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
+
+      s.C.earlyStart.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
+      s.C.earlyFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+    });
+
+    it('should maintain dependency ordering', function() {
+      var tasks = [
+            {id: 'A', duration: 120, resources: ['A'], priority: 0},
+            {id: 'B', duration: 120, dependsOn: ['A'], resources: ['A'], priority: 100},
+            {id: 'C', duration: 120, dependsOn: ['A'], resources: ['A'], priority: 150}
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
+
+      s.B.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+      s.B.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
+
+      s.C.earlyStart.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
+      s.C.earlyFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+    });
+
+  });
+
+  describe('task schedules', function() {
+
+    it('should only schedule tasks when available', function() {
+      var tasks = [
+            {id: 'A', duration: 120, schedule: {schedules: [{h_a: [12]}]}}
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
+    });
+
+    it('should work if project schedule is null', function() {
+      var tasks = [
+            {id: 'A', duration: 120, schedule: {schedules: [{h_a: [12]}]}}
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.schedule(tasks, null, null, startDate).scheduledTasks;
+
+      s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
+      s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
     });
 
   });

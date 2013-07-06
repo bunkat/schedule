@@ -1,6 +1,6 @@
 {
   "name": "schedule",
-  "version": "1.0.0",
+  "version": "0.6.0",
   "description": "Schedule tasks, meetings, appointments, etc",
   "keywords": [
     "schedule",
@@ -23,7 +23,7 @@
     }
   },
   "dependencies": {
-    "later": ">=1.1.0"
+    "later": ">=1.1.2"
   },
   "devDependencies": {
     "smash": "~0.0.8",
