@@ -33,6 +33,7 @@ schedule-cov.js: schedule.js
 
 benchmark: all
 	@node benchmark/dependency-graph-bench.js
+	@node benchmark/create-schedule-bench.js
 
 schedule.js: $(shell node_modules/.bin/smash --list src/schedule.js)
 	@rm -f $@

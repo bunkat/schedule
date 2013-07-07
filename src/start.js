@@ -9,3 +9,5 @@ schedule = (function() {
   var schedule = {version: "0.6.0"}; // semver
 
   var later = !later && require ? require('later') : later;
+
+  if(!later) throw new Error('Schedule.js requires Later.js.');

@@ -2,8 +2,7 @@
 * Timezone
 * (c) 2013 Bill, BunKat LLC.
 *
-* Configures helper functions to switch between useing local time and UTC. Schedule
-* uses UTC time by default.
+* Configures Schedule to use local time or UTC. Schedule uses UTC time by default.
 *
 * Schedule is freely distributable under the MIT license.
 * For all details and documentation:

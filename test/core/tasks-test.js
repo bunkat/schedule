@@ -26,10 +26,13 @@ describe('Tasks', function() {
       should.exist(schedule.tasks().dependsOn);
     });
 
-    it('should support a custom splittable function', function() {
-      should.exist(schedule.tasks().splittable);
+    it('should support a custom minSchedule function', function() {
+      should.exist(schedule.tasks().minSchedule);
     });
 
+    it('should support a custom priority function', function() {
+      should.exist(schedule.tasks().priority);
+    });
   });
 
 

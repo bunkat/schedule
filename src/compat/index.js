@@ -1,1 +1,2 @@
 import "isarray";
+import "indexof";

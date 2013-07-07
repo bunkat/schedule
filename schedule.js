@@ -3,9 +3,42 @@ schedule = function() {
     version: "0.6.0"
   };
   var later = !later && require ? require("later") : later;
+  if (!later) throw new Error("Schedule.js requires Later.js.");
   if (!Array.isArray) {
     Array.isArray = function(vArg) {
       return Object.prototype.toString.call(vArg) === "[object Array]";
+    };
+  }
+  if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(searchElement) {
+      "use strict";
+      if (this == null) {
+        throw new TypeError();
+      }
+      var t = Object(this);
+      var len = t.length >>> 0;
+      if (len === 0) {
+        return -1;
+      }
+      var n = 0;
+      if (arguments.length > 1) {
+        n = Number(arguments[1]);
+        if (n != n) {
+          n = 0;
+        } else if (n != 0 && n != Infinity && n != -Infinity) {
+          n = (n > 0 || -1) * Math.floor(Math.abs(n));
+        }
+      }
+      if (n >= len) {
+        return -1;
+      }
+      var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+      for (;k < len; k++) {
+        if (k in t && t[k] === searchElement) {
+          return k;
+        }
+      }
+      return -1;
     };
   }
   schedule.date = {};
@@ -25,7 +58,7 @@ schedule = function() {
     return function(start) {
       if (!cache[start]) {
         var result = fn(1, start);
-        cache[start] = [ result[0].getTime(), result[1] ? result[1].getTime() : 41024448e5 ];
+        cache[start] = [ result[0] ? result[0].getTime() : 41024448e5, result[1] ? result[1].getTime() : 41024448e5 ];
       }
       return cache[start];
     };
@@ -43,19 +76,19 @@ schedule = function() {
       return taskGraph.tasks[b].floatAmt > taskGraph.tasks[a].floatAmt;
     });
   };
-  schedule.resources = function(resourceArr) {
+  schedule.resources = function() {
     var id = resourcesId, sched = resourcesSched, isNotReservable = resourcesIsNotReservable;
-    function resources() {
-      var map = {}, fid = schedule.functor(id), fsched = schedule.functor(sched), freserve = schedule.functor(isNotReservable);
-      for (var i = 0, len = resourceArr.length; i < len; i++) {
-        var resource = resourceArr[i], rId = fid.call(this, resource, i), rSched = fsched.call(this, resource, i), rReserve = freserve.call(this, resource, i);
-        map[rId] = {
+    function resources(data) {
+      var items = [], fid = schedule.functor(id), fsched = schedule.functor(sched), freserve = schedule.functor(isNotReservable);
+      for (var i = 0, len = data.length; i < len; i++) {
+        var resource = data[i], rId = fid.call(this, resource, i), rSched = fsched.call(this, resource, i), rReserve = freserve.call(this, resource, i);
+        items.push({
           id: rId,
           schedule: rSched,
           isNotReservable: rReserve
-        };
+        });
       }
-      return map;
+      return items;
     }
     resources.id = function(_) {
       if (!arguments.length) return id;
@@ -83,22 +116,23 @@ schedule = function() {
   function resourcesIsNotReservable(d) {
     return d.isNotReservable || false;
   }
-  schedule.tasks = function(taskArr) {
-    var id = tasksId, duration = tasksDuration, sched = tasksSched, resources = tasksResources, dependsOn = tasksDependsOn, splittable = tasksSplittable;
-    function tasks() {
-      var items = [], fid = schedule.functor(id), fduration = schedule.functor(duration), fsched = schedule.functor(sched), fresources = schedule.functor(resources), fdependsOn = schedule.functor(dependsOn), fsplittable = schedule.functor(splittable);
-      for (var i = 0, len = taskArr.length; i < len; i++) {
-        var task = taskArr[i], item = {
+  schedule.tasks = function() {
+    var id = tasksId, duration = tasksDuration, sched = tasksSched, resources = tasksResources, dependsOn = tasksDependsOn, minSchedule = tasksMinSchedule, priority = tasksPriority;
+    function tasks(data) {
+      var items = [], fid = schedule.functor(id), fduration = schedule.functor(duration), fsched = schedule.functor(sched), fresources = schedule.functor(resources), fdependsOn = schedule.functor(dependsOn), fminschedule = schedule.functor(minSchedule), fpriority = schedule.functor(priority);
+      for (var i = 0, len = data.length; i < len; i++) {
+        var task = data[i], item = {
           id: fid.call(this, task, i),
           duration: fduration.call(this, task, i),
           schedule: fsched.call(this, task, i),
           resources: fresources.call(this, task, i),
           dependsOn: fdependsOn.call(this, task, i),
-          splittable: fsplittable.call(this, task, i)
+          minSchedule: fminschedule.call(this, task, i),
+          priority: fpriority.call(this, task, i)
         };
         items.push(item);
       }
-      return map;
+      return items;
     }
     tasks.id = function(_) {
       if (!arguments.length) return id;
@@ -125,9 +159,14 @@ schedule = function() {
       dependsOn = _;
       return tasks;
     };
-    tasks.splittable = function(_) {
-      if (!arguments.length) return splittable;
-      splittable = _;
+    tasks.minSchedule = function(_) {
+      if (!arguments.length) return minSchedule;
+      minSchedule = _;
+      return tasks;
+    };
+    tasks.priority = function(_) {
+      if (!arguments.length) return priority;
+      priority = _;
       return tasks;
     };
     return tasks;
@@ -136,7 +175,7 @@ schedule = function() {
     return d.id;
   }
   function tasksDuration(d) {
-    return d.id;
+    return d.duration;
   }
   function tasksSched(d) {
     return d.schedule;
@@ -147,8 +186,11 @@ schedule = function() {
   function tasksDependsOn(d) {
     return d.dependsOn;
   }
-  function tasksSplittable(d) {
-    return d.splittable;
+  function tasksMinSchedule(d) {
+    return d.minSchedule;
+  }
+  function tasksPriority(d) {
+    return d.priority;
   }
   schedule.dependencyGraph = function(taskArr) {
     function createDependencyGraph(tasks) {
@@ -161,7 +203,16 @@ schedule = function() {
         end: 0
       };
       for (var i = 0, len = tasks.length; i < len; i++) {
-        graph.tasks[tasks[i].id] = tasks[i];
+        var t = tasks[i];
+        graph.tasks[t.id] = {
+          id: t.id,
+          duration: t.duration,
+          priority: t.priority,
+          schedule: t.schedule,
+          minSchedule: t.minSchedule,
+          dependsOn: t.dependsOn,
+          resources: t.resources
+        };
       }
       setResources(graph);
       setRequiredBy(graph.tasks);
@@ -176,7 +227,7 @@ schedule = function() {
     function setResources(graph) {
       for (var id in graph.tasks) {
         var task = graph.tasks[id];
-        if (task.resources) {
+        if (!isEmpty(task.resources)) {
           for (var i = 0, len = task.resources.length; i < len; i++) {
             var resId = task.resources[i];
             if (graph.resources.indexOf(resId) === -1) {
@@ -186,16 +237,10 @@ schedule = function() {
         }
       }
     }
-    function setEnd(graph, tasks) {
-      for (var i = 0, len = tasks.length; i < len; i++) {
-        var finish = graph.tasks[tasks[i]].earlyFinish;
-        graph.end = finish > graph.end ? finish : graph.end;
-      }
-    }
     function setRequiredBy(tasks) {
       for (var id in tasks) {
         var child = tasks[id], dependsOn = child.dependsOn;
-        if (dependsOn) {
+        if (!isEmpty(dependsOn)) {
           for (var i = 0, len = dependsOn.length; i < len; i++) {
             var parent = tasks[dependsOn[i]];
             (parent.requiredBy || (parent.requiredBy = [])).push(child.id);
@@ -206,10 +251,10 @@ schedule = function() {
     function setRootsAndLeaves(graph) {
       for (var id in graph.tasks) {
         var task = graph.tasks[id];
-        if (!task.dependsOn || task.dependsOn.length === 0) {
+        if (isEmpty(task.dependsOn)) {
           graph.roots.push(task.id);
         }
-        if (!task.requiredBy || task.requiredBy.length === 0) {
+        if (isEmpty(task.requiredBy)) {
           graph.leaves.push(task.id);
         }
       }
@@ -219,7 +264,7 @@ schedule = function() {
         var task = graph.tasks[tasks[i]], dependsOn = task.dependsOn;
         task.depth = !task.depth || depth > task.depth ? depth : task.depth;
         graph.depth = depth > graph.depth ? depth : graph.depth;
-        if (dependsOn) {
+        if (!isEmpty(dependsOn)) {
           setDepth(graph, dependsOn, task.depth + 1);
         }
       }
@@ -228,24 +273,30 @@ schedule = function() {
       updateDependencies(depEnds, tasks, start);
       for (var i = 0, len = tasks.length; i < len; i++) {
         var tid = tasks[i], task = graph.tasks[tid], dependsOn = task.dependsOn, dep = depEnds[tid];
-        if (!task.earlyFinish && (!dependsOn || dep && dep[0] === dependsOn.length)) {
+        if (!task.earlyFinish && (isEmpty(dependsOn) || dep && dep[0] === dependsOn.length)) {
           task.earlyStart = dep[1];
           task.earlyFinish = dep[1] + task.duration;
-          if (task.requiredBy) {
+          if (!isEmpty(task.requiredBy)) {
             forwardPass(graph, depEnds, task.requiredBy, task.earlyFinish);
           }
         }
+      }
+    }
+    function setEnd(graph, tasks) {
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var finish = graph.tasks[tasks[i]].earlyFinish;
+        graph.end = finish > graph.end ? finish : graph.end;
       }
     }
     function backwardPass(graph, depEnds, tasks, end) {
       updateDependencies(depEnds, tasks, end, true);
       for (var i = 0, len = tasks.length; i < len; i++) {
         var tid = tasks[i], task = graph.tasks[tid], requiredBy = task.requiredBy, dep = depEnds[tid];
-        if (!requiredBy || dep && dep[0] === requiredBy.length) {
+        if (isEmpty(requiredBy) || dep && dep[0] === requiredBy.length) {
           task.lateStart = dep[1] - task.duration;
           task.lateFinish = dep[1];
           task.floatAmt = task.lateFinish - task.earlyFinish;
-          if (task.dependsOn) {
+          if (!isEmpty(task.dependsOn)) {
             backwardPass(graph, depEnds, task.dependsOn, task.lateStart);
           }
         }
@@ -267,6 +318,9 @@ schedule = function() {
         }
       }
     }
+    function isEmpty(arr) {
+      return !arr || arr.length === 0;
+    }
     return createDependencyGraph(taskArr);
   };
   schedule.resourceManager = function(resourceDefinitions, startDate) {
@@ -276,9 +330,9 @@ schedule = function() {
       } ]
     }, rMap = buildResourceMap(resourceDefinitions, startDate);
     function buildResourceMap(resourceDefinitions, start) {
-      var map = {}, i, len;
+      var map = {};
       if (resourceDefinitions) {
-        for (i = 0, len = resourceDefinitions.length; i < len; i++) {
+        for (var i = 0, len = resourceDefinitions.length; i < len; i++) {
           addResourceToMap(map, resourceDefinitions[i], start);
         }
       }
@@ -298,9 +352,39 @@ schedule = function() {
       initRanges(resources, start, schedules, delays);
       while (!(reservation = tryReservation(schedules, min, max)).success && --maxTries) {
         updateRanges(schedules, nextValidStart(schedules), delays);
-        reservation.delays = delays;
       }
+      reservation.delays = delays;
       return reservation;
+    }
+    function initRanges(resources, start, ranges, delays) {
+      for (var i = 0, len = resources.length; i < len; i++) {
+        var resId = resources[i];
+        if (Array.isArray(resId)) {
+          var subRanges = [], subDelays = {};
+          initRanges(resId, start, subRanges, subDelays);
+          var longDelay = getLongestDelay(subDelays);
+          if (longDelay) {
+            delays[longDelay] = subDelays[longDelay];
+          }
+          var schedule = {
+            subRanges: subRanges
+          };
+          setEarliestSubRange(schedule);
+          ranges.push(schedule);
+        } else {
+          var res = rMap[resId], range = res.nextAvail[0] >= start ? res.nextAvail : res.next(start);
+          if (range[0] > start && resId !== "_proj") {
+            delays[resId] = {
+              needed: start,
+              available: range[0]
+            };
+          }
+          ranges.push({
+            id: resId,
+            range: range
+          });
+        }
+      }
     }
     function tryReservation(schedules, min, max) {
       var reservation = {
@@ -308,10 +392,7 @@ schedule = function() {
       }, resources = [], start, end;
       for (var i = 0, len = schedules.length; i < len; i++) {
         var schedule = schedules[i], range = schedule.range;
-        if (!range) return {
-          success: false
-        };
-        if (schedule.id[0] !== "_") {
+        if (!isInternal(schedule)) {
           resources.push(schedule.id);
         }
         start = !start || range[0] > start ? range[0] : start;
@@ -320,36 +401,62 @@ schedule = function() {
       var duration = (end - start) / later.MIN;
       if (duration >= min) {
         duration = max && duration > max ? max : duration;
-        end = start + duration * later.MIN;
-        reservation = {
-          resources: resources,
-          start: start,
-          end: end,
-          duration: duration,
-          success: true
-        };
-        applyReservation(resources, start, end);
+        reservation = createReservation(resources, start, duration);
       }
+      return reservation;
+    }
+    function createReservation(resources, start, duration) {
+      var end = start + duration * later.MIN, reservation = {
+        resources: resources,
+        start: start,
+        end: end,
+        duration: duration,
+        success: true
+      };
+      applyReservation(resources, start, end);
       return reservation;
     }
     function updateRanges(resources, start, delays) {
       for (var i = 0, len = resources.length; i < len; i++) {
         var res = resources[i];
-        if (res.range[1] <= start) {
-          if (res.subRanges) {
-            updateRanges(res.subRanges, start, {});
-            setEarliestSubRange(res);
-          } else {
-            res.range = rMap[res.id].next(start);
-            if (res.id !== "_proj" && !delays[res.id]) {
-              delays[res.id] = {
-                needed: new Date(start),
-                available: new Date(res.range[0])
-              };
-            }
+        if (res.range[1] > start) continue;
+        if (res.subRanges) {
+          updateRanges(res.subRanges, start, {});
+          setEarliestSubRange(res);
+        } else {
+          res.range = rMap[res.id].next(start);
+          if (res.id !== "_proj" && !delays[res.id]) {
+            delays[res.id] = {
+              needed: start,
+              available: res.range[0]
+            };
           }
         }
       }
+    }
+    function applyReservation(resources, start, end) {
+      for (var i = 0, len = resources.length; i < len; i++) {
+        var res = rMap[resources[i]];
+        if (res.isNotReservable) continue;
+        if (start !== res.nextAvail[0]) {
+          if (!res.schedule.exceptions) res.schedule.exceptions = [];
+          res.schedule.exceptions.push({
+            fd_a: [ start ],
+            fd_b: [ end ]
+          });
+          res.next = schedule.memoizedRangeFn(later.schedule(res.schedule).nextRange);
+          end = res.nextAvail[0];
+        }
+        res.nextAvail = res.next(end);
+      }
+    }
+    function nextValidStart(schedules) {
+      var latest;
+      for (var i = 0, len = schedules.length; i < len; i++) {
+        var end = schedules[i].range[1];
+        latest = !latest || end < latest ? end : latest;
+      }
+      return latest;
     }
     function setEarliestSubRange(schedule) {
       var minId, minRange;
@@ -363,14 +470,6 @@ schedule = function() {
       schedule.id = minId;
       schedule.range = minRange;
     }
-    function nextValidStart(schedules) {
-      var latest;
-      for (var i = 0, len = schedules.length; i < len; i++) {
-        var end = schedules[i].range[1];
-        latest = !latest || end < latest ? end : latest;
-      }
-      return latest;
-    }
     function getLongestDelay(delays) {
       var latest, lid;
       for (var id in delays) {
@@ -382,74 +481,42 @@ schedule = function() {
       }
       return lid;
     }
-    function initRanges(resources, start, ranges, delays) {
-      for (var i = 0, len = resources.length; i < len; i++) {
-        var resId = resources[i];
-        if (Array.isArray(resId)) {
-          var subRanges = [], subDelays = {};
-          initRanges(resId, start, subRanges, subDelays);
-          var longDelay = getLongestDelay(subDelays);
-          delays[longDelay] = subDelays[longDelay];
-          var schedule = {
-            subRanges: subRanges
-          };
-          setEarliestSubRange(schedule);
-          ranges.push(schedule);
-        } else {
-          var res = rMap[resId], range = res.nextAvail[0] >= start ? res.nextAvail : res.next(start);
-          if (range[0] > start && resId !== "_proj") {
-            delays[resId] = {
-              needed: new Date(start),
-              available: new Date(range[0])
-            };
-          }
-          ranges.push({
-            id: resId,
-            range: range
-          });
-        }
-      }
-    }
-    function applyReservation(resources, start, end) {
-      for (var i = 0, len = resources.length; i < len; i++) {
-        var res = rMap[resources[i]];
-        if (!res.isNotReservable) {
-          if (start === res.nextAvail[0]) {
-            res.nextAvail = res.next(end);
-          } else {
-            if (!res.schedule.exceptions) res.schedule.exceptions = [];
-            res.schedule.exceptions.push({
-              fd_a: [ start ],
-              fd_b: [ end ]
-            });
-            res.next = schedule.memoizedRangeFn(later.schedule(res.schedule).nextRange);
-            res.nextAvail = res.next(res.nextAvail[0]);
-          }
-        }
-      }
+    function isInternal(resource) {
+      return resource.id[0] === "_";
     }
     return {
-      resourceMap: function() {
-        return rMap;
+      getResource: function(id) {
+        return rMap[id];
       },
-      setResource: function(resourceDefinition, start) {
-        addResourceToMap(rMap, resourceDefinition, start);
+      addResource: function(arr, prefix, start) {
+        for (var i = 0, len = arr.length; i < len; i++) {
+          var def = typeof arr[i] !== "object" ? {
+            id: prefix + arr[i]
+          } : {
+            id: prefix + arr[i].id,
+            schedule: arr[i].schedule,
+            isNotReservable: arr[i].isNotReservable
+          };
+          if (!rMap[def.id]) {
+            addResourceToMap(rMap, def, start);
+          }
+        }
       },
       makeReservation: function(resources, start, min, max) {
         start = start ? new Date(start) : new Date();
         return getReservation(resources, start.getTime(), min || 1, max);
       },
-      moveStartDate: function(start) {
+      optimize: function(start) {
         for (var id in rMap) {
           var res = rMap[id];
           if (res.schedule.exceptions) {
-            var curExceptions = res.schedule.exceptions, nextExceptions = [];
+            var curExceptions = res.schedule.exceptions;
+            res.schedule.exceptions = [];
             for (var i = 0, len = curExceptions.length; i < len; i++) {
               if (!curExceptions[i].fd_b || curExceptions[i].fd_b > start) {
-                nextExceptions.push(curExceptions[i]);
+                res.schedule.exceptions.push(curExceptions[i]);
               }
             }
-            res.schedule.exceptions = nextExceptions;
             res.next = schedule.memoizedRangeFn(later.schedule(res.schedule).nextRange);
           }
           if (res.nextAvail[0] < start) {
@@ -459,29 +526,16 @@ schedule = function() {
       }
     };
   };
-  schedule.schedule = function(tasks, resources, sched, startDate, endDate) {
+  schedule.create = function(tasks, resources, sched, startDate) {
     var taskGraph = schedule.dependencyGraph(tasks), resMgr = schedule.resourceManager(resources, startDate), scheduledTasks = {};
     function generateSchedule() {
-      var range, failedTasks = [], i, len;
-      for (i = 0, len = taskGraph.resources.length; i < len; i++) {
-        var resId = taskGraph.resources[i];
-        if (!resMgr.resourceMap()[resId]) {
-          resMgr.setResource({
-            id: resId
-          }, startDate);
-        }
-      }
-      resMgr.setResource({
+      var range, failedTasks = [];
+      resMgr.addResource(taskGraph.resources, "", startDate);
+      resMgr.addResource([ {
         id: "_proj",
         schedule: sched
-      }, startDate);
-      for (i = 0, len = tasks.length; i < len; i++) {
-        var task = tasks[i];
-        resMgr.setResource({
-          id: "_task" + task.id,
-          schedule: task.schedule
-        }, startDate);
-      }
+      } ], "", startDate);
+      resMgr.addResource(tasks, "_task", startDate);
       forwardPass(taskGraph.roots);
       range = getSummary(tasks, failedTasks);
       backwardPass(taskGraph.leaves, range[1]);
@@ -493,52 +547,22 @@ schedule = function() {
         end: range[1]
       };
     }
-    function getSummary(tasks, failedTasks) {
-      var start, end;
-      for (var i = 0, len = tasks.length; i < len; i++) {
-        var t = scheduledTasks[tasks[i].id];
-        if (!t) {
-          failedTasks.push(tasks[i].id);
-          continue;
-        }
-        start = !start || t.earlyStart < start ? t.earlyStart : start;
-        end = !end || t.earlyFinish > end ? t.earlyFinish : end;
-      }
-      return [ start, end ];
-    }
     function forwardPass(roots) {
       var readyTasks = roots.slice(0), dependencies = {};
+      for (var i = 0, len = roots.length; i < len; i++) {
+        dependencies[roots[i]] = [ 0, startDate.getTime() ];
+      }
       while (readyTasks.length) {
         schedule.sort.tasks(taskGraph, readyTasks);
-        var task = taskGraph.tasks[readyTasks.pop()], start = dependencies[task.id] ? dependencies[task.id][1] : startDate.getTime(), end = forwardPassTask(task, start);
+        var task = taskGraph.tasks[readyTasks.pop()], start = dependencies[task.id][1], end = forwardPassTask(task, start);
         if (end && task.requiredBy) {
           updateDependencies(readyTasks, dependencies, task.requiredBy, end);
-          resMgr.moveStartDate(getMinStart(dependencies));
-        }
-      }
-    }
-    function getMinStart(dependencies) {
-      var min;
-      for (var id in dependencies) {
-        if (!min || min > dependencies[id][1]) {
-          min = dependencies[id][1];
-        }
-      }
-      return min;
-    }
-    function updateDependencies(readyTasks, dependencies, tasks, end) {
-      for (var i = 0, len = tasks.length; i < len; i++) {
-        var tid = tasks[i], dependsOn = taskGraph.tasks[tid].dependsOn, metDeps = dependencies[tid] || (dependencies[tid] = [ 0, 0 ]);
-        metDeps[0] += 1;
-        metDeps[1] = end > metDeps[1] ? end : metDeps[1];
-        if (!dependsOn || metDeps[0] >= dependsOn.length) {
-          readyTasks.push(tid);
+          resMgr.optimize(getMinStart(dependencies));
         }
       }
     }
     function forwardPassTask(task, start) {
-      var resAll = [ "_proj", "_task" + task.id ], resources = task.resources ? resAll.concat(task.resources) : resAll;
-      duration = task.duration, next = start, scheduledTask = {
+      var resAll = [ "_proj", "_task" + task.id ], resources = task.resources ? resAll.concat(task.resources) : resAll, duration = task.duration, next = start, scheduledTask = {
         schedule: [],
         duration: task.duration
       };
@@ -554,13 +578,47 @@ schedule = function() {
       scheduledTasks[task.id] = scheduledTask;
       return next;
     }
+    function getSummary(tasks, failedTasks) {
+      var start, end;
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var t = scheduledTasks[tasks[i].id];
+        if (t) {
+          start = !start || t.earlyStart < start ? t.earlyStart : start;
+          end = !end || t.earlyFinish > end ? t.earlyFinish : end;
+        } else {
+          failedTasks.push(tasks[i].id);
+        }
+      }
+      return [ start, end ];
+    }
+    function updateDependencies(readyTasks, dependencies, tasks, end) {
+      for (var i = 0, len = tasks.length; i < len; i++) {
+        var tid = tasks[i], dependsOn = taskGraph.tasks[tid].dependsOn, metDeps = dependencies[tid] || (dependencies[tid] = [ 0, 0 ]);
+        metDeps[0] += 1;
+        metDeps[1] = end > metDeps[1] ? end : metDeps[1];
+        if (!dependsOn || metDeps[0] >= dependsOn.length) {
+          readyTasks.push(tid);
+        }
+      }
+    }
+    function getMinStart(dependencies) {
+      var min;
+      for (var id in dependencies) {
+        if (!min || min > dependencies[id][1]) {
+          min = dependencies[id][1];
+        }
+      }
+      return min;
+    }
     function backwardPass(tasks, finishDate) {
       for (var i = 0, len = tasks.length; i < len; i++) {
         var sTask = scheduledTasks[tasks[i]], dependsOn = taskGraph.tasks[tasks[i]].dependsOn;
-        sTask.lateFinish = finishDate;
-        sTask.floatAmt = (sTask.lateFinish - sTask.earlyFinish) / later.MIN;
-        if (dependsOn) {
-          backwardPass(dependsOn, sTask.earlyStart);
+        if (sTask) {
+          sTask.lateFinish = finishDate;
+          sTask.floatAmt = (sTask.lateFinish - sTask.earlyFinish) / later.MIN;
+          if (dependsOn) {
+            backwardPass(dependsOn, sTask.earlyStart);
+          }
         }
       }
     }

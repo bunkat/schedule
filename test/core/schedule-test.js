@@ -19,7 +19,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
@@ -33,7 +33,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
@@ -52,7 +52,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.B.earlyStart.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
       s.B.earlyFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
@@ -72,7 +72,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.D.earlyStart.should.eql((new Date(2013, 2, 21, 13, 0, 0)).getTime());
       s.D.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 40, 0)).getTime());
@@ -89,7 +89,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate);
+      var s = schedule.create(tasks, [], projSched, startDate);
 
       should.not.exist(s.scheduledTasks.B);
       should.not.exist(s.scheduledTasks.C);
@@ -105,7 +105,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.schedule.length.should.eql(2);
       s.A.schedule[0].duration.should.eql(600);
@@ -122,7 +122,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 18, 0, 0)).getTime());
@@ -142,7 +142,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
     });
@@ -154,7 +154,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 40, 0)).getTime());
       s.B.lateFinish.should.eql((new Date(2013, 2, 21, 11, 20, 0)).getTime());
@@ -169,7 +169,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.lateFinish.should.eql((new Date(2013, 2, 21, 9, 0, 0)).getTime());
       s.B.lateFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
@@ -177,7 +177,7 @@ describe('Schedule', function() {
       s.D.lateFinish.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
     });
 
-    it('should set float amount in days', function() {
+    it('should set float amount in minutes', function() {
       var tasks = [
             {id: 'A', duration: 60},
             {id: 'B', duration: 60, dependsOn: ['A']},
@@ -186,7 +186,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.floatAmt.should.eql(0);
       s.B.floatAmt.should.eql(120);
@@ -204,7 +204,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 17, 0, 0);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.schedule.length.should.eql(1);
       s.A.schedule[0].duration.should.eql(240);
@@ -219,7 +219,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 16, 0, 0);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.schedule.length.should.eql(2);
       s.A.schedule[0].duration.should.eql(120);
@@ -241,7 +241,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
@@ -261,7 +261,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 8, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 10, 0, 0)).getTime());
@@ -283,10 +283,39 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
-      var s = schedule.schedule(tasks, [], projSched, startDate).scheduledTasks;
+      var s = schedule.create(tasks, [], projSched, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());
+    });
+
+    it('should fail to schedule tasks that will never be available', function() {
+      var tasks = [
+            {id: 'A', duration: 120, schedule: {schedules: [{fd_b: [100]}]}}
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.create(tasks, [], projSched, startDate);
+
+      s.failedTasks.should.eql(['A']);
+      s.success.should.eql(false);
+    });
+
+    it('should fail to schedule tasks with an invalid schedule', function() {
+      var tasks = [
+            {id: 'A', duration: 120, schedule:
+              {
+                schedules: [{h: [5,6]}],
+                exceptions: [{h: [5,6]}]
+              }
+            }
+          ],
+          startDate = new Date(2013, 2, 21, 0, 0, 0);
+
+      var s = schedule.create(tasks, [], projSched, startDate);
+
+      s.failedTasks.should.eql(['A']);
+      s.success.should.eql(false);
     });
 
     it('should work if project schedule is null', function() {
@@ -295,7 +324,7 @@ describe('Schedule', function() {
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
-      var s = schedule.schedule(tasks, null, null, startDate).scheduledTasks;
+      var s = schedule.create(tasks, null, null, startDate).scheduledTasks;
 
       s.A.earlyStart.should.eql((new Date(2013, 2, 21, 12, 0, 0)).getTime());
       s.A.earlyFinish.should.eql((new Date(2013, 2, 21, 14, 0, 0)).getTime());

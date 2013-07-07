@@ -1,40 +1,68 @@
+/**
+* Resources
+* (c) 2013 Bill, BunKat LLC.
+*
+* Takes an array of objects and generates an array of valid schedule resources
+* objects.
+*
+* Schedule is freely distributable under the MIT license.
+* For all details and documentation:
+*     http://github.com/bunkat/schedule
+*/
 
-
-schedule.resources = function(resourceArr) {
+schedule.resources = function() {
   var id = resourcesId,
       sched = resourcesSched,
       isNotReservable = resourcesIsNotReservable;
 
-  function resources() {
-    var map = {},
+  /**
+  * Takes an array of objects and returns an array of schedule resource objects.
+  */
+  function resources(data) {
+    var items = [],
         fid = schedule.functor(id),
         fsched = schedule.functor(sched),
         freserve = schedule.functor(isNotReservable);
 
-    for(var i = 0, len = resourceArr.length; i < len; i++) {
-      var resource = resourceArr[i],
+    for(var i = 0, len = data.length; i < len; i++) {
+      var resource = data[i],
           rId = fid.call(this, resource, i),
           rSched = fsched.call(this, resource, i),
           rReserve = freserve.call(this, resource, i);
 
-      map[rId] = {id: rId, schedule: rSched, isNotReservable: rReserve};
+      items.push({id: rId, schedule: rSched, isNotReservable: rReserve});
     }
 
-    return map;
+    return items;
   }
 
+  /**
+  * The function or value that should be used to generate the resource id. Sets the
+  * value to the argument passed in, returns current value if no arguments are
+  * passed in.
+  */
   resources.id = function(_) {
     if (!arguments.length) return id;
     id = _;
     return resources;
   };
 
+  /**
+  * The function or value that should be used to generate the resource schedule. The
+  * schedule must be a valid Later.js schedule. Sets the value to the argument
+  * passed in, returns current value if no arguments are passed in.
+  */
   resources.schedule = function(_) {
     if (!arguments.length) return sched;
     sched = _;
     return resources;
   };
 
+  /**
+  * The function or value that should be used to generate the resource is not
+  * reservable value. Sets the value to the argument passed in, returns current
+  * value if no arguments are passed in.
+  */
   resources.isNotReservable = function(_) {
     if (!arguments.length) return isNotReservable;
     isNotReservable = _;
@@ -44,14 +72,23 @@ schedule.resources = function(resourceArr) {
   return resources;
 };
 
+/**
+* The default id function.
+*/
 function resourcesId(d) {
   return d.id;
 }
 
+/**
+* The default schedule function.
+*/
 function resourcesSched(d) {
   return d.schedule;
 }
 
+/**
+* The default is not reservable function.
+*/
 function resourcesIsNotReservable(d) {
   return d.isNotReservable || false;
 }

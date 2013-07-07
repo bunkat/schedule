@@ -1,17 +1,17 @@
 var Benchmark = require('benchmark'),
-    schedule = require('../index'),
-    suite = new Benchmark.Suite('dependency-graph'),
-    tasks;
+    suite = new Benchmark.Suite('dependency-graph');
+
+global.schedule = require('../index');
 
 suite
-.add('create graph', function() {
+.add('create dependency graph', function() {
   schedule.dependencyGraph(tasks);
 },
 {
   'setup': function() {
     var tasks = [
           {id: 'A', duration: 480},
-          {id: 'B', duration: 240 },
+          {id: 'B', duration: 240, dependsOn: ['A'] },
           {id: 'C', duration: 120, dependsOn: ['A'] },
           {id: 'D', duration: 360, dependsOn: ['A'] },
           {id: 'E', duration: 120, dependsOn: ['B', 'C'] },

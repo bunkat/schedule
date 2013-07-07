@@ -22,52 +22,6 @@ describe('Resource Manager', function() {
   // set to use local time
   schedule.date.localTime();
 
-  describe('resource map', function() {
-    var mgr = schedule.resourceManager(resources, startDate);
-
-    it('should contain all of the resources', function() {
-      var map = mgr.resourceMap();
-
-      should.exist(map.A);
-      should.exist(map.B);
-      should.exist(map.C);
-      should.exist(map.D);
-      should.exist(map.E);
-      should.exist(map._proj);
-    });
-
-    it('should specify the next time that the resource is available', function() {
-      var map = mgr.resourceMap();
-
-      map.A.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 8, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 16, 0, 0)).getTime()
-      ]);
-      map.B.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 10, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 14, 0, 0)).getTime()
-      ]);
-      map.C.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 8, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 12, 0, 0)).getTime()
-      ]);
-      map.D.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 18, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 20, 0, 0)).getTime()
-      ]);
-      map.E.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 12, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 14, 0, 0)).getTime()
-      ]);
-      map._proj.nextAvail.should.eql([
-        (new Date(2013, 2, 21, 6, 0, 0)).getTime(),
-        (new Date(2013, 2, 21, 20, 0, 0)).getTime()
-      ]);
-    });
-
-
-  });
-
   describe('make reservation', function() {
 
     it('should include requested resource', function() {
@@ -202,17 +156,16 @@ describe('Resource Manager', function() {
           resC = mgr.makeReservation(['_proj', 'A', 'B'], startDate, 1, 240),
           resD = mgr.makeReservation(['_proj', 'A', 'B'], startDate, 1, 120);
 
-      var map = mgr.resourceMap();
-      map.A.schedule.exceptions.length.should.eql(4);
+      mgr.getResource('A').schedule.exceptions.length.should.eql(4);
 
-      mgr.moveStartDate(new Date(2013,2, 22).getTime());
-      map.A.schedule.exceptions.length.should.eql(3);
+      mgr.optimize(new Date(2013,2, 22).getTime());
+      mgr.getResource('A').schedule.exceptions.length.should.eql(3);
 
-      mgr.moveStartDate(new Date(2013,2, 23).getTime());
-      map.A.schedule.exceptions.length.should.eql(1);
+      mgr.optimize(new Date(2013,2, 23).getTime());
+      mgr.getResource('A').schedule.exceptions.length.should.eql(1);
 
-      mgr.moveStartDate(new Date(2013,2, 24).getTime());
-      map.A.schedule.exceptions.length.should.eql(0);
+      mgr.optimize(new Date(2013,2, 24).getTime());
+      mgr.getResource('A').schedule.exceptions.length.should.eql(0);
     });
 
   });
