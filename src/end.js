@@ -1,2 +1,2 @@
     return schedule;
-})();
+})(this.later);

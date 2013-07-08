@@ -1,9 +1,12 @@
-schedule = function() {
+if (typeof module !== "undefined" && module.exports) {
+  this.later = require("later");
+}
+
+schedule = function(later) {
   var schedule = {
     version: "0.6.0"
   };
-  var later = !later && require ? require("later") : later;
-  if (!later) throw new Error("Schedule.js requires Later.js.");
+  if (!later) throw new Error("Laterjs must be included before Schedulejs.");
   if (!Array.isArray) {
     Array.isArray = function(vArg) {
       return Object.prototype.toString.call(vArg) === "[object Array]";
@@ -625,4 +628,4 @@ schedule = function() {
     return generateSchedule();
   };
   return schedule;
-}();
+}(this.later);

@@ -5,9 +5,12 @@
 * For all details and documentation:
 *     http://bunkat.github.com/later
 */
-schedule = (function() {
+
+if(typeof module !== 'undefined' && module.exports) {
+  this.later = require('later');
+}
+
+schedule = (function(later) {
   var schedule = {version: "0.6.0"}; // semver
 
-  var later = !later && require ? require('later') : later;
-
-  if(!later) throw new Error('Schedule.js requires Later.js.');
+  if(!later) throw new Error('Laterjs must be included before Schedulejs.');
