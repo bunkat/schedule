@@ -3,6 +3,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 schedule = function(later) {
+  "use strict";
   var schedule = {
     version: "0.6.0"
   };
@@ -350,8 +351,7 @@ schedule = function(later) {
       };
     }
     function getReservation(resources, start, min, max) {
-      var reservation, schedules = [], delays = {};
-      maxTries = 50;
+      var reservation, schedules = [], delays = {}, maxTries = 50;
       initRanges(resources, start, schedules, delays);
       while (!(reservation = tryReservation(schedules, min, max)).success && --maxTries) {
         updateRanges(schedules, nextValidStart(schedules), delays);

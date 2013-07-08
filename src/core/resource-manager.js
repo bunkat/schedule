@@ -48,7 +48,7 @@ schedule.resourceManager = function(resourceDefinitions, startDate) {
   * than max minutes.
   */
   function getReservation(resources, start, min, max) {
-    var reservation, schedules = [], delays = {};
+    var reservation, schedules = [], delays = {},
         maxTries = 50;
 
     initRanges(resources, start, schedules, delays);
