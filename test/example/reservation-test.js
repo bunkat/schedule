@@ -3,7 +3,7 @@ var schedule = require('../../index'),
     p = later.parse.text,
     should = require('should');
 
-describe('Example: Elevator reservations', function() {
+describe.skip('Example: Elevator reservations', function() {
 
   it('should produce correct reservations', function() {
 
