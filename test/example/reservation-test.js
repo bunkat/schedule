@@ -3,6 +3,7 @@ var schedule = require('../../index'),
     p = later.parse.text,
     should = require('should');
 
+// Note: this test is dependent on PST timezone
 describe.skip('Example: Elevator reservations', function() {
 
   it('should produce correct reservations', function() {
