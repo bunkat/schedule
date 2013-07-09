@@ -13,6 +13,6 @@ if(typeof module !== 'undefined' && module.exports) {
 schedule = (function(later) {
   "use strict";
 
-  var schedule = {version: "0.6.0"}; // semver
+  var schedule = {version: "0.6.1"}; // semver
 
   if(!later) throw new Error('Laterjs must be included before Schedulejs.');

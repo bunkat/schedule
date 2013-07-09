@@ -1,6 +1,6 @@
 {
   "name": "schedulejs",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Schedule tasks, meetings, appointments, etc",
   "keywords": [
     "schedule",
