@@ -10,7 +10,7 @@
 *     http://github.com/bunkat/schedule
 */
 
-schedule.create = function(tasks, resources, sched, start) {
+schedule.create = function(tasks, resources, sched, scheduleStart) {
   if(!Array.isArray(tasks)) {
     throw new Error('Tasks are required and must be passed in as an array.');
   }
@@ -19,7 +19,7 @@ schedule.create = function(tasks, resources, sched, start) {
     throw new Error('Resources must be passed in as an array.');
   }
 
-  var startDate = start ? new Date(start) : new Date();
+  var startDate = scheduleStart ? new Date(scheduleStart) : new Date();
   if(!startDate || !startDate.getTime()) {
     throw new Error('Invalid start date specified.');
   }
