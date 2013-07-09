@@ -1,7 +1,7 @@
 var schedule = require("../index");
 
 console.log(JSON.stringify({
-  "name": "schedule",
+  "name": "schedulejs",
   "version": schedule.version,
   "description": "Schedule tasks, meetings, appointments, etc",
   "keywords": ["schedule", "task", "appointment", "meeting", "event"],

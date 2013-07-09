@@ -14,7 +14,7 @@ Types of schedules supported by _Schedule_:
 ## Installation
 Using npm:
 
-    $ npm install schedule
+    $ npm install schedulejs
 
 Using bower:
 
