@@ -118,7 +118,7 @@ schedule.resourceManager = function(resourceDefinitions, startDate) {
     }
 
     var duration = (end - start) / later.MIN;
-    if(duration >= min) {
+    if(duration >= min || duration >= max) {
       duration = max && duration > max ? max : duration;
       reservation = createReservation(resources, start, duration);
     }
