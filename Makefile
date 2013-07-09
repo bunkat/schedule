@@ -4,7 +4,7 @@ TESTS ?= $(shell find test -name "*-test.js")
 all: \
 	schedule.js \
 	schedule.min.js \
-	component.json \
+	bower.json \
 	package.json
 
 .PHONY: clean all test test-cov
@@ -26,7 +26,7 @@ schedule-cov.js: schedule.js
 		--no-instrument=sort/index.js \
 		--no-instrument=start.js \
 		--no-instrument=end.js \
-		--no-instrument=component.js \
+		--no-instrument=bower.js \
 		--no-instrument=package.js
 	node_modules/.bin/smash src-cov/schedule.js > schedule-cov.js
 	@chmod a-w $@
@@ -44,9 +44,9 @@ schedule.min.js: schedule.js
 	@rm -f $@
 	node_modules/.bin/uglifyjs $< -c -m -o $@
 
-component.json: src/component.js schedule.js
+bower.json: src/bower.js schedule.js
 	@rm -f $@
-	node src/component.js > $@
+	node src/bower.js > $@
 	@chmod a-w $@
 
 package.json: src/package.js schedule.js
@@ -55,4 +55,4 @@ package.json: src/package.js schedule.js
 	@chmod a-w $@
 
 clean:
-	rm -f schedule*.js package.json component.json
+	rm -f schedule*.js package.json bower.json

@@ -1,10 +1,12 @@
-{
+var schedule = require("../index");
+
+console.log(JSON.stringify({
   "name": "schedule",
-  "version": "0.6.0",
+  "version": schedule.version,
   "main": "./schedule.js",
   "dependencies": {
-    "later": "1.1.3"
-  },
+      "later": "1.1.3"
+    },
   "ignore": [
     "**/.*",
     "node_modules",
@@ -13,4 +15,4 @@
     "test",
     "tests"
   ]
-}
+}, null, 2));
