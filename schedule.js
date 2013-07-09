@@ -529,7 +529,17 @@ schedule = function(later) {
       }
     };
   };
-  schedule.create = function(tasks, resources, sched, startDate) {
+  schedule.create = function(tasks, resources, sched, start) {
+    if (!Array.isArray(tasks)) {
+      throw new Error("Tasks are required and must be passed in as an array.");
+    }
+    if (resources && !Array.isArray(resources)) {
+      throw new Error("Resources must be passed in as an array.");
+    }
+    var startDate = start ? new Date(start) : new Date();
+    if (!startDate || !startDate.getTime()) {
+      throw new Error("Invalid start date specified.");
+    }
     var taskGraph = schedule.dependencyGraph(tasks), resMgr = schedule.resourceManager(resources, startDate), scheduledTasks = {};
     function generateSchedule() {
       var range, failedTasks = [];
