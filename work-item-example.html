@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Work Item Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="schedulejs">
+    <meta name="author" content="BunKat">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".later-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">Schedule</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./getting-started.html">Getting started</a>
+              </li>
+              <li class="">
+                <a href="./tasks.html">Tasks</a>
+              </li>
+              <li class="">
+                <a href="./resources.html">Resources</a>
+              </li>
+              <li class="">
+                <a href="./create.html">Create schedule</a>
+              </li>
+              <li class="active">
+                <a href="./work-item-example.html">Work Item Example</a>
+              </li>
+              <li class="">
+                <a href="./reservation-example.html">Reservation Example</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Work item example</h1>
+    <p class="lead">A complete example of scheduling a set of work items.</p>
+  </div>
+</header>
+
+
+  <div class="container">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row">
+
+      <div class="span12">
+
+
+         <!-- Overview
+        ================================================== -->
+        <section id="overview">
+          <div>
+            <h2>Summary</h2>
+          </div>
+          <p>The example here is for two people attempting to paint a bedroom\
+            in their house. The example demonstrates:</p>
+            <ul>
+              <li>Defining a set of work items
+              <li>Defining a set of people to complete the work items
+              <li>Using <code>schedule.tasks</code> to get the tasks into the proper format
+              <li>Using <code>schedule.resources</code> to get the resources into the proper format
+              <li>Creating a new schedule
+            </ul>
+          <br/>
+          <p><span class="label label-info">Note</span> This example assumes the code is running in Node. To see an example
+            that runs in the browser, see the <a href='./reservation-example.html'>
+            reservation example</a>.</p>
+
+        </section>
+
+         <!-- Code
+        ================================================== -->
+        <section id="code">
+          <div>
+            <h2>Code</h2>
+          </div>
+
+
+<pre>
+// Require schedule
+var schedule = require('../index');
+
+// To make schedules easier to read, we'll be using the text parser from later,
+// if you manually specify the later schedules, you don't need to require it here
+var later = require('later'),
+    p = later.parse.text;
+
+// Step 1: Define the work items (tasks), property names don't matter at this
+// point, we'll fix them up later using schedule.task
+var workItems = [
+  {
+    name: 'Purchase supplies',
+    length: 2,                      // lengths specified in hours
+    minSchedule: 2,                 // have to schedule all 2 hours at once
+    assignedTo: ['Bob', 'Sara'],    // both Bob and Sara are needed
+    availability: 'after 8:00am and before 9:00pm'
+                                    //can only complete when paint store is open
+  },
+  {
+    name: 'Remove doors',
+    length: 0.5,
+    assignedTo: ['Bob']
+  },
+  {
+    name: 'Clear furniture',
+    length: 1,
+    assignedTo: [['Sara', 'Bob']]   // either Bob or Sara is needed
+  },
+  {
+    name: 'Protect carpet',
+    dependsOn: ['Purchase supplies', 'Clear furniture', 'Remove doors'],
+    length: 2,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Paint trim',
+    dependsOn: ['Protect carpet'],  // specifying task dependencies
+    length: 3,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Paint walls',
+    dependsOn: ['Protect carpet'],
+    length: 5,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Paint doors',
+    dependsOn: ['Remove doors', 'Protect carpet'],
+    length: 2,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Cleanup',
+    dependsOn: ['Paint trim', 'Paint walls', 'Paint doors'],
+    length: 1,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Replace furniture',
+    dependsOn: ['Paint trim', 'Paint walls', 'Paint doors'],
+    length: 0.5,
+    assignedTo: [['Bob', 'Sara']]
+  },
+  {
+    name: 'Install doors',
+    dependsOn: ['Paint doors', 'Paint trim', 'Paint walls'],
+    length: 0.5,
+    assignedTo: ['Bob', 'Sara']
+  }
+];
+
+// Step 2: Define our resources, we'll fix up property names with schedule.resources
+var people = [
+  {
+    name: 'Bob',
+    // Bob likes to sleep in a bit on the weekends
+    availability: 'every weekend after 10:00am and before 6:00pm'
+  },
+  {
+    name: 'Sara',
+    // Sara gets up earlier but has plans Saturday afternoon so we note that in her availability
+    availability: 'every weekend after 8:00am and before 6:00pm except on Sat after 1:00pm and before 4:00pm'
+  }
+];
+
+// Step 3: Tasks aren't in the right format, need to create a generator
+var t = schedule.tasks()
+          .id(function(d) { return d.name; })
+          // our length is in hours, convert to minutes
+          .duration(function(d) { return d.length * 60; })
+          // use later.parse.text to parse text into a usable schedule
+          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; })
+          // convert minSchedule to minutes
+          .minSchedule(function(d) { return d.minSchedule ? d.minSchedule * 60 : undefined; })
+          // resources are the people the tasks have been assigned to
+          .resources(function(d) { return d.assignedTo; });
+
+var tasks = t(workItems);
+
+// Step 4: Resources aren't in the right format either, need to create a generator
+var r = schedule.resources()
+          .id(function(d) { return d.name; })
+          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; });
+
+var resources = r(people);
+
+// Step 5: Pick a start date for the schedule and set correct timezone
+var start = new Date(2013, 2, 21);
+schedule.date.localTime();
+
+// Step 6: Create the schedule
+var s = schedule.create(tasks, resources, null, start);
+</pre>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2013 BunKat &nbsp; Later is licensed under the
+          <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+      </div>
+    </footer>
+
+
+
+    <!-- Javascript
+    ================================================== -->
+    <script src="assets/js/jquery-1.10.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script>
+      // side bar
+      setTimeout(function () {
+        $('.later-sidenav').affix({
+          offset: {
+            top: function () { return $(window).width() <= 980 ? 230 : 150 }
+          , bottom: 270
+          }
+        })
+      }, 100);
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42237071-1', 'bunkat.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Reservation Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="schedulejs">
+    <meta name="author" content="BunKat">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".later-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">Schedule</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./getting-started.html">Getting started</a>
+              </li>
+              <li class="">
+                <a href="./tasks.html">Tasks</a>
+              </li>
+              <li class="">
+                <a href="./resources.html">Resources</a>
+              </li>
+              <li class="">
+                <a href="./create.html">Create schedule</a>
+              </li>
+              <li class="">
+                <a href="./work-item-example.html">Work Item Example</a>
+              </li>
+              <li class="active">
+                <a href="./reservation-example.html">Reservation Example</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Reservation example</h1>
+    <p class="lead">A complete example of scheduling the reservations for a
+      particular set of resources.</p>
+  </div>
+</header>
+
+
+  <div class="container">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row">
+
+      <div class="span12">
+
+
+         <!-- Overview
+        ================================================== -->
+        <section id="overview">
+          <div>
+            <h2>Summary</h2>
+          </div>
+          <p>The example here is for reserving an elevator in an apartment complex. The
+            example demonstrates:</p>
+            <ul>
+              <li>Defining a set of reservations
+              <li>Defining a set of elevators that will be reserved
+              <li>Using <code>schedule.tasks</code> to get the tasks into the proper format
+              <li>Using <code>schedule.resources</code> to get the resources into the proper format
+              <li>Creating a new schedule
+            </ul>
+          <br/>
+          <p><span class="label label-info">Note</span> This example assumes the code is running in
+            the browswer. To see an example
+            that runs in Node, see the <a href='./work-item-example.html'>
+            work item example</a>.</p>
+
+        </section>
+
+         <!-- Code
+        ================================================== -->
+        <section id="code">
+          <div>
+            <h2>Code</h2>
+          </div>
+
+
+<pre>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;style type="text/css"&gt;
+h1 {
+  font-size: 16pt;
+}
+
+h2 {
+  font-size: 14pt;
+}
+
+p {
+  font-size: 12pt;
+  line-height: 12pt;
+  margin: 2pt;
+  padding-left: 20px;
+}
+
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;/body&gt;
+
+&lt;script src="later.min.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script src="schedule.min.js" type="text/javascript"&gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+
+// We'll use the Later text parser to create schedules that are readable
+var p = later.parse.text;
+
+// Step 1: Define our reservations (tasks)
+var reservations = [
+  {name: 'Joe', length: 4, availability: 'after 12:00'},
+  {name: 'Mike', length: 2},
+  {name: 'Frank', length: 8},
+  {name: 'John', length: 3, availability: 'on Thurs and Fri'},
+  {name: 'Peter', length: 1, availability: 'before 10:00am'},
+  {name: 'Sam', length: 2},
+  {name: 'Alan', length: 2},
+  {name: 'James', length: 8},
+  {name: 'Steve', length: 1, availability: 'after 12:00 and before 1:00pm'},
+  {name: 'Mark', length: 2},
+  {name: 'Alex', length: 8}
+];
+
+// Step 2: Define our elevators (resources)
+var elevators = [
+  {name: 'E1', availability: 'every weekday after 8:00am and before 4:00pm'},
+  {name: 'E2', availability: 'every weekday after 8:00am and before 4:00pm'}
+];
+
+// Step 3: Tasks aren't in the right format, need to create a generator
+var t = schedule.tasks()
+          .id(function(d) { return d.name; })
+          // our length is in hours, convert to minutes
+          .duration(function(d) { return d.length * 60; })
+          // use later.parse.text to parse text into a usable schedule
+          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; })
+          // prioritize our reservations on first come first serve
+          .priority(function(d, i) { return 100 - i; })
+          // elevator reservations have to be contiguous
+          .minSchedule(function(d) { return d.length * 60; })
+          // assume that only one elevator is available for reservations to start
+          .resources(['E1']);
+
+var tasks = t(reservations);
+
+// Step 4: Resources aren't in the right format, need to create a generator
+var r = schedule.resources()
+          .id(function(d) { return d.name; })
+          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; });
+
+var resources = r(elevators);
+
+// Step 5: Pick a start date for the schedule and set correct timezone
+var start = new Date(2013, 2, 21);
+schedule.date.localTime();
+
+// Step 6: Create the schedule
+var s = schedule.create(tasks, resources, null, start);
+
+for(var id in s.scheduledTasks) {
+  var st = s.scheduledTasks[id];
+  console.log(st);
+  document.write('&lt;h2&gt;' + id + '&lt;/h2&gt;');
+  document.write('&lt;p&gt;&lt;b&gt;Duration:&lt;/b&gt; ' + st.duration + ' mins&lt;/p&gt;');
+  document.write('&lt;p&gt;&lt;b>Start:&lt;/b&gt; ' + new Date(st.earlyStart).toLocaleString() + '&lt;/p&gt;');
+  document.write('&lt;p&gt;&lt;b>Finish:&lt;/b&gt; ' + new Date(st.earlyFinish).toLocaleString() + '&lt;/p&gt;');
+}
+
+&lt;/script&gt;
+&lt;/html&gt;
+</pre>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2013 BunKat &nbsp; Later is licensed under the
+          <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+      </div>
+    </footer>
+
+
+
+    <!-- Javascript
+    ================================================== -->
+    <script src="assets/js/jquery-1.10.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script>
+      // side bar
+      setTimeout(function () {
+        $('.later-sidenav').affix({
+          offset: {
+            top: function () { return $(window).width() <= 980 ? 230 : 150 }
+          , bottom: 270
+          }
+        })
+      }, 100);
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42237071-1', 'bunkat.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>

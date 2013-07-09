@@ -1,0 +1,261 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Resources</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="schedulejs">
+    <meta name="author" content="BunKat">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".later-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">Schedule</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./getting-started.html">Getting started</a>
+              </li>
+              <li class="">
+                <a href="./tasks.html">Tasks</a>
+              </li>
+              <li class="active">
+                <a href="./resources.html">Resources</a>
+              </li>
+              <li class="">
+                <a href="./create.html">Create schedule</a>
+              </li>
+              <li class="">
+                <a href="./work-item-example.html">Work Item Example</a>
+              </li>
+              <li class="">
+                <a href="./reservation-example.html">Reservation Example</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Resources</h1>
+    <p class="lead">Resource definition and customization.</p>
+  </div>
+</header>
+
+
+  <div class="container">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row">
+      <div class="span3 later-sidebar">
+        <ul class="nav nav-list later-sidenav">
+          <li><a href="#overview"><i class="icon-chevron-right"></i> Overview</a></li>
+          <li><a href="#options"><i class="icon-chevron-right"></i> Options</a></li>
+          <li><a href="#generator"><i class="icon-chevron-right"></i> Resource generator</a></li>
+        </ul>
+      </div>
+      <div class="span9">
+
+
+         <!-- Overview
+        ================================================== -->
+        <section id="overview">
+          <div>
+            <h2>Overview</h2>
+          </div>
+          <p>Resources are the things that tasks depend on and can represent
+            people, supplies, rooms, elevators, etc. All resources are
+            simple JSON objects with a set of options which determines how the
+            resource is reserved. The only required option is the id
+            of the resource.</p>
+<br/>
+<pre>
+  // a basic resource called 'Res1'
+  var resource = {id: 'Res1'};
+</pre>
+
+          <br/>
+          <p><span class="label label-info">Note</span> Resources required by
+            tasks will be generated automatically for you if you don't specify
+            them yourself.</p>
+        </section>
+
+        <!-- Interface
+        ================================================== -->
+        <section id="options">
+          <div>
+            <h2>Resource options</h2>
+          </div>
+          <p>Resources are JSON objects that are customized using the following
+            properties:</p>
+          <dl>
+          <dt>id (required)</dt>
+          <dd>The id of the resource. Every resource must specify a unique id.</dd>
+
+          <dt>available</dt>
+          <dd>Defines when the resource may be reserved. Specified using any valid
+            <code>Later</code> schedule. The resource will never be reserved for a
+            time when the available schedule is invalid.</dd>
+
+          <dt>isNotReservable</dt>
+          <dd>By default, resources are reserved so that they can only be used
+            by one task at a time. If you want to allow resources to be used
+            by multiple tasks at the same time, set <code>isNotReservable</code>
+            to true.</dd>
+        </dl>
+
+        <p>Example resources:</p>
+<pre>
+  // a basic resource that is always available
+  var r1 = {id: 'Resource1'};
+
+  // a resource that can only be scheduled on weekdays
+  var r2 = {
+    id: 'Resource2',
+    available: later.parse.text('every weekday')
+  };
+
+  // a resource that will not be reserved by a task
+  var r3 = {id: 'Resource3', isNotReservable: true};
+
+  // a fully customized resource
+  var r4 = {
+    id: 'Resource4',
+    available: later.parse.recur().on(2).dayOfWeek().after('9:00').time(),
+    isNotReservable: false
+  };
+</pre>
+        </section>
+
+         <!-- Generator
+        ================================================== -->
+        <section id="generator">
+          <div>
+            <h2>Resource generator</h2>
+          </div>
+          <p>Often times the resources that your application defines are not in the
+            format that Schedule requires. To make the conversion process easier,
+            Schedule includes a resource generator that can be used on any array of
+            objects to produce valid resources.</p>
+
+<br/>
+<pre>
+  // creating a default resource generator
+  var t = schedule.resources();
+</pre>
+          <br/>
+          <h4>tasks#id</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>id</code> of the resource. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#available</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>available</code> schedule of the resource. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#isNotReservable</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>isNotReservable</code> property of the resource. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+        <br/>
+        <h4>Example usage:</h4>
+<pre>
+  // the original items that we want to make into resources
+  var elevators = [
+    {name: 'E1', available: 'every weekday after 8:00am and before 4:00pm'},
+    {name: 'E2', available: 'every weekday after 8:00am and before 4:00pm'}
+  ];
+
+  // creating our resource generator
+  var r = schedule.resources()
+            // use the name of our object as the id
+            .id(function(d) { return d.name; })
+
+            // use later.parse.text to convert available into a valid schedule
+            .schedule(function(d) {
+              return d.availability ? later.parse.text(d.availability) : undefined;
+            })
+
+            // set all of the elevators to be reservable
+            .isNotReservable(false);
+
+  // create resources out of our elevators
+  var resources = r(elevators);
+</pre>
+
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2013 BunKat &nbsp; Later is licensed under the
+          <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+      </div>
+    </footer>
+
+
+
+    <!-- Javascript
+    ================================================== -->
+    <script src="assets/js/jquery-1.10.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script>
+      // side bar
+      setTimeout(function () {
+        $('.later-sidenav').affix({
+          offset: {
+            top: function () { return $(window).width() <= 980 ? 230 : 150 }
+          , bottom: 270
+          }
+        })
+      }, 100);
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42237071-1', 'bunkat.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>

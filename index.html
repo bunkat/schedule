@@ -74,10 +74,10 @@
 
       <div class="jumbotron">
         <h1>A flexible scheduler for tasks, work items, reservations,
-          and meetings.</h1>
-        <p class="lead">Automatically schedule tasks with full support for
-          task dependencies, durations, resources, priorities, and
-          availability schedules.
+          meetings, etc.</h1>
+        <p class="lead">The easiest way to schedule work items with complex dependencies
+          across developers that all have different work schedules. Or reserve elevators in an apartment building. Or schedule the company
+          ping pong tournament. Works in Node and in the browser.
         </p>
         <a class="btn btn-large" href="https://github.com/bunkat/schedule"><i class="icon-folder-open"></i> View on GitHub</a>
         <a class="btn btn-large btn-primary" href="./getting-started.html">Get Started</a>
@@ -86,56 +86,53 @@
       <div class="row-fluid">
 
         <div class="span12">
-          <h4>Basic usage:</h4>
+          <h3>Basic usage</h3>
 
 <pre>
-  // Define a set of tasks with dependencies, resources, and other options
-  // Availability is defined using Laterjs schedules
+  // Define a set of tasks
   var tasks = [
-    {id: 1, duration: 60, schedule: later.parse.text('every weekday')},
-    {id: 3, duration: 30, dependsOn: [1], resources: ['A']},
-    {id: 4, duration: 30, dependsOn: [1], resources: [['A','B'],'C']}
+    {id: 1, duration: 60, available: later.parse.text('every weekday')},
+    {id: 2, duration: 30, dependsOn: [1], resources: ['A']},
+    {id: 3, duration: 30, dependsOn: [1], resources: [['A','B']]}
   ];
 
-  // Define a set of resources and their availability
+  // Define a set of resources
   var resources = [
     {id: A},
-    {id: B, schedule: later.parse.text('after 10:00am and before 6:00pm')},
-    {id: C, isNotReservable: true}
+    {id: B, available: later.parse.text('after 10:00am and before 6:00pm')}
   ];
 
-  // Define the overall project schedule and the start date
-  var projectSchedule = later.parse.text('every weekday'),
-      startDate = new Date();
-
-  // Create a schedule for all of the tasks
-  schedule.create(tasks, resources, projectSchedule, startDate);
+  // Create the schedule for all of the tasks
+  schedule.create(tasks, resources);
 </pre>
-          <small>See a fully documented example of scheduling
-            <a href="./getting-started.html#building">reservations</a> or
-            <a href="./getting-started.html#running-tests">work items</a>.</small>
+          <small>See a more complete, fully documented example of scheduling
+            <a href="./work-item-example.html">work items</a> or
+            <a href="./reservation-example.html">reservations</a>.</small>
 
       <div class="row-fluid marketing">
 
         <div class="span6">
           <h4>Minimal library dependencies</h4>
-          <p>Schedule only depends on Later, a small library for working with
+          <p>Schedule only depends on <a href="http://bunkat.github.io/later">Later</a>, a small library for working with
             recurring schedules. With no other dependencies using Schedule is easy.</p>
 
           <h4>Serializable</h4>
           <p>Tasks, resources, and resulting schedules are simple json objects
             that are fully serializable. Easy to store in databases and in caches.</p>
 
+          <h4>Flexible</h4>
+          <p>Tasks and resources support <a href="http://bunkat.github.io/later">Later</a>
+            schedules to define when a task can be scheduled or a resource can be reserved.</p>
         </div>
 
         <div class="span6">
           <h4>Unit tests included</h4>
-          <p>Supported by a test suite of over 90 unit and scenario tests,
+          <p>Supported by a test suite of over 70 unit and scenario tests,
             additional tests for new scenarios always welcome.</p>
 
           <h4>Deterministic</h4>
           <p>All schedules are completely deterministic, meaning that they always
-          produce the same set of schedules regardless of when you
+          produce the same set of results regardless of when you
           calculate them.</p>
 
         </div>
@@ -157,18 +154,20 @@
 </pre>
 
 <pre>
-  var later = require('later');
+  var schedule = require('schedule');
 </pre>
 
           <p>Using bower and a browser:
 <pre>
   $ bower install later
+  $ bower install schedule
 </pre>
 
 <pre>
   &lt;script src="later.min.js" type="text/javascript">&lt;/script&gt;
+  &lt;script src="schedule.min.js" type="text/javascript">&lt;/script&gt;
   &lt;script type="text/javascript"&gt;
-    // later namespace is available
+    // schedule namespace is available
   &lt;/script&gt;
 </pre>
           <small>More information on
@@ -176,22 +175,24 @@
             <a href="./getting-started.html#running-tests">running tests</a>, and
             <a href="./getting-started.html#benchmarks">running benchmarks</a>.</small>
 
-<p>Define your tasks with at least an id and a duration in minutes. Customize
-  how the tasks get scheduled by:
-</p>
-<ul>
-  <li>Specifying dependencies between tasks
-  <li>Adding a Laterjs schedule that determines when the task can be scheduled
-  <li>Including one or more resources that the task requires (supports AND and OR semantics)
-  <li>Providing a priority that determines task order after
-    dependencies have been met
-  <li>Indicating whether or not the task can be split up into multiple time blocks
-</ul>
+          <h4>Step 2: Define your tasks</h4>
+          <p>Tasks are the things that you want to schedule. You need to specify
+            at least an id and a duration in minutes. You can then customize
+            how the tasks get scheduled by:
+          </p>
+          <ul>
+            <li>Specifying dependencies between tasks
+            <li>Adding a <code>Later</code> schedule that determines when the task is available
+            <li>Including one or more resources that the task requires (supports AND and OR semantics)
+            <li>Providing a priority that determines task order after
+              dependencies have been met
+            <li>Indicating whether or not the task can be split up into multiple time blocks
+          </ul>
 
 <pre>
   var tasks = [
     {id: 1, duration: 60},
-    {id: 2, duration: 60, schedule: later.parse.text('every weekday')},
+    {id: 2, duration: 60, available: later.parse.text('every weekday')},
     {id: 3, duration: 30, dependsOn: [1], priority: 100},
     {id: 4, duration: 30, dependsOn: [1], minLength: 30},
     {id: 5, duration: 90, dependsOn: [2,3]},
@@ -200,142 +201,54 @@
     {id: 8, duration: 30, dependsOn: [6,7], resources: [['A', 'B'], 'C']}
   ];
 </pre>
-<br/>
-<p>Define your resources with at least an id. Customize
-  how the resources are used by:
-</p>
-<ul>
-  <li>Adding a Laterjs schedule that determines when the resources can be reserved
-  <li>Specifying if resources need to be reserved or can be used by multiple tasks
-</ul>
+          <small>More information on
+            <a href="./tasks.html">tasks</a>,
+            <a href="./tasks.html#options">task options</a> and the
+            <a href="./tasks.html#generator">task generator</a>.</small>
+
+          <h4>Step 3: Define your resources</h4>
+          <p>Resources are the things that your tasks require in order to be
+            completed. By default, resources are automatically reserved when they are used
+            by a task. Customize how the resources are used by:
+          </p>
+          <ul>
+            <li>Adding a <code>Later</code> schedule that determines when the resources are available
+            <li>Specifying if resources need to be reserved or can be used by multiple tasks
+          </ul>
 
 <pre>
   var resources = [
     {id: A},
-    {id: B, schedule: later.parse.text('after 10:00am and before 6:00pm')},
+    {id: B, available: later.parse.text('after 10:00am and before 6:00pm')},
     {id: C, isNotReservable: true}
   ];
 </pre>
+          <small>More information on
+            <a href="./resources.html">resources</a>,
+            <a href="./resources.html#options">resource options</a> and the
+            <a href="./resources.html#generator">resource generator</a>.</small>
 
-<br/>
-<p>Create a Laterjs schedule for the overall project, no tasks will be scheduled outside
-  of this schedule. Then decide when you want to start scheduling tasks from.
-</p>
+          <h4>Step 4: Define your project availability and start date</h4>
+          <p>Create a <code>Later</code> schedule for the overall project, no tasks will be scheduled outside
+            of this schedule. Then decide when you want to start scheduling tasks from.
+          </p>
 <pre>
-  var projectSchedule = later.parse.text('every weekday'),
+  var projectAvailability = later.parse.text('every weekday'),
       startDate = new Date();
 </pre>
 
-<br/>
-<p>Finally create the schedule.</p>
+          <h4>Step 5: Create the schedule</h4>
+          <p>Finally pass your tasks, resources, project availability and start date to <code>create</code>.
+          The return value is the schedule with start and end times for each task
+          that was successfully scheduled.</p>
 <pre>
-  schedule.create(tasks, resources, projectSchedule, startDate);
-</pre>
-
-
-
-
-
-
-
-          <h4>Step 2: Define a schedule</h4>
-          <p>The first step is to create a new schedule definition. There are a
-            bunch of different ways to define a schedule, but at the end of the
-            day they are just simple json objects that can easily be serialized
-            and stored.</p>
-
-<pre>
-  // define a new schedule
-  var textSched = later.parse.text('at 10:15am every weekday');
-  var cronSched = later.parse.cron('0 0/5 14,18 * * ?');
-  var recurSched = later.parse.recur().last().dayOfMonth();
-  var manualSched = {schedules: [{M: 3, D: 21}]};
-</pre>
-
-          <p>Schedules can also get as complicated as you need:</p>
-
-<pre>
-  // this schedule will fire on the closest weekday to the 15th
-  // every month at 2:00 am except in March
-  var complexSched = later.parse.recur()
-                  .on(15).dayOfMonth().onWeekday().on(2).hour()
-                .and()
-                  .on(14).dayOfMonth().on(6).dayOfWeek().on(2).hour()
-                .and()
-                  .on(16).dayOfMonth().on(2).dayOfWeek().on(2).hour()
-                .except()
-                  .on(3).month();
+  schedule.create(tasks, resources, projectAvailability, startDate);
 </pre>
 
           <small>More information on
-            <a href="./time-periods.html">supported time periods</a>,
-            <a href="./schedules.html">creating schedules</a>, and
-            <a href="./parsers.html">using parsers</a>.</small>
-
-
-          <h4>Step 3: Configure timezone</h4>
-          <p>All schedule definitions are completely timezone agnostic. When
-            you need to calculate occurrences, you can decide to perform the
-            calculation using local time or UTC.</p>
-
-<pre>
-  // set later to use UTC (the default)
-  later.date.UTC();
-
-  // set later to use local time
-  later.date.localTime();
-</pre>
-
-          <h4>Step 4: Calculate occurrences</h4>
-          <p>Once a schedule has been defined, calculating future (or past)
-            occurrences is very straightforward. You can calculate as many
-            occurrences as you need in either a forward or backward direction. You
-            can even calculate ranges with start and end dates which allows scheduling
-            of appointments or events.</p>
-
-<pre>
-  // calculate the next 10 occurrences of a recur schedule
-  var recurSched = later.parse.recur().last().dayOfMonth();
-      next = later.schedule(recurSched).next(10);
-
-  // calculate the previous occurrence starting from March 21, 2013
-  var cronSched = later.parse.cron('0 0/5 14,18 * * ?'),
-      next = later.schedule(cronSched).prev(1, new Date(2013, 2, 21));
-</pre>
-
-          <small>More information on calculating
-            <a href="./occurrences.html#instances">individual instances</a> and
-            <a href="./occurrences.html#ranges">ranges</a>.</small>
-
-          <h4>Step 5: Execute code using a Later schedule</h4>
-          <p>Later includes implementations of <code>setTimeout()</code> and
-            <code>setInterval()</code> that work with Later schedules instead
-            of milliseconds. This makes it extremely easy to execute code based
-            on a schedule definition.</p>
-
-<pre>
-
-  // will fire every 5 minutes
-  var textSched = later.parse.text('every 5 min');
-
-  // execute logTime one time on the next occurrence of the text schedule
-  var timer = later.setTimeout(logTime, textSched);
-
-  // execute logTime for each successive occurrence of the text schedule
-  var timer2 = later.setInterval(logTime, textSched);
-
-  // function to execute
-  function logTime() {
-    console.log(new Date());
-  }
-
-  // clear the interval timer when you are done
-  timer2.clear();
-</pre>
-        <small>More information on
-          <a href="./execute.html#set-timeout">setTimeout</a> and
-          <a href="./execute.html#set-interval">setInterval</a>.</small>
-
+            <a href="./create.html">creating schedules</a> and understanding the
+            <a href="./create.html#result">results</a>.</small>
+        <br/>
         <br/>
         <br/>
         <a class="btn btn-large btn-inverse" href="./getting-started.html">View full documentation</a>

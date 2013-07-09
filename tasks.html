@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Tasks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="schedulejs">
+    <meta name="author" content="BunKat">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".later-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">Schedule</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./getting-started.html">Getting started</a>
+              </li>
+              <li class="active">
+                <a href="./tasks.html">Tasks</a>
+              </li>
+              <li class="">
+                <a href="./resources.html">Resources</a>
+              </li>
+              <li class="">
+                <a href="./create.html">Create schedule</a>
+              </li>
+              <li class="">
+                <a href="./work-item-example.html">Work Item Example</a>
+              </li>
+              <li class="">
+                <a href="./reservation-example.html">Reservation Example</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Tasks</h1>
+    <p class="lead">Task definition and customization.</p>
+  </div>
+</header>
+
+
+  <div class="container">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row">
+      <div class="span3 later-sidebar">
+        <ul class="nav nav-list later-sidenav">
+          <li><a href="#overview"><i class="icon-chevron-right"></i> Overview</a></li>
+          <li><a href="#options"><i class="icon-chevron-right"></i> Options</a></li>
+          <li><a href="#generator"><i class="icon-chevron-right"></i> Task generator</a></li>
+        </ul>
+      </div>
+      <div class="span9">
+
+
+         <!-- Overview
+        ================================================== -->
+        <section id="overview">
+          <div>
+            <h2>Overview</h2>
+          </div>
+          <p>Tasks are the things that need to be scheduled and can represent
+            work items, reservations, meetings, events, etc. All tasks are
+            simple JSON objects with a set of options which determines how the
+            task is scheduled. The only required options are the id and duration
+            of the task.</p>
+<br/>
+<pre>
+  // a basic task called 'Task1' that is 60 minutes long
+  var task = {id: 'Task1', duration: 60};
+</pre>
+
+          <br/>
+          <p><span class="label label-info">Important</span> By default, tasks
+            will be broken into smaller chunks when needed in order to best fit the
+            schedule. If you want a task to be scheduled as one contiguous
+            block of time, set <code>minLength</code> equal to the task
+            <code>duration</code>.</p>
+        </section>
+
+        <!-- Interface
+        ================================================== -->
+        <section id="options">
+          <div>
+            <h2>Task options</h2>
+          </div>
+          <p>Tasks are JSON objects that are customized using the following
+            properties:</p>
+          <dl>
+          <dt>id (required)</dt>
+          <dd>The id of the task. Every task must specify a unique id.</dd>
+
+          <dt>duration (required)</dt>
+          <dd>The length of the task in minutes.</dd>
+
+          <dt>minLength</dt>
+          <dd>The smallest length of time that a task will be scheduled for. By
+            default, Schedule will split up tasks as needed to best fit into the
+            schedule. Set <code>minLength</code> equal to <code>duration</code>
+            if you want to make sure the task is scheduled in one contiguous
+            chunk of time.</dd>
+
+          <dt>dependsOn</dt>
+          <dd>An array of task ids that must be complete before the task can
+            be scheduled.</dd>
+
+          <dt>resources</dt>
+          <dd>An array of resource ids that must be available before the task
+            can be scheduled. By default all resources in the array must be available.
+            Use a nested array to specify that one of a set of resources must
+            be available.</dd>
+
+          <dt>available</dt>
+          <dd>Defines when the task may be scheduled. Specified using any valid
+            <code>Later</code> schedule. The task will never be scheduled for a
+            time when the available schedule is invalid.</dd>
+
+          <dt>priority</dt>
+          <dd>The relative priority of the task, higher numbers mean higher
+            priority. Used to determine which task should be scheduled next when there
+            are multiple tasks that could be scheduled (i.e. their dependencies
+            have been met). By default, tasks are scheduled based on how critical
+            it is that they finish on time.</dd>
+        </dl>
+
+        <p>Example tasks:</p>
+<pre>
+  // a task that is 60 minutes long
+  var t1 = {id: 'Task1', duration: 60};
+
+  // a task that can only be broken up into pieces that are at least 30 min long
+  var t2 = {id: 'Task2', duration: 60, minLength: 30};
+
+  // a task that depends on two other tasks
+  var t3 = {id: 'Task3', duration: 60, dependsOn: ['Task1', 'Task2']};
+
+  // a task that requires resource A
+  var t4 = {id: 'Task4', duration: 60, resources: ['A']};
+
+  // a task that requires resource A AND resource B
+  var t5 = {id: 'Task5', duration: 60, resources: ['A', 'B']};
+
+  // a task that requires resource A OR resource B
+  var t6 = {id: 'Task6', duration: 60, resources: [['A', 'B']]};
+
+  // a task that requires (resource A OR resource B) and resource C
+  var t7 = {id: 'Task7', duration: 60, resources: [['A', 'B'], 'C']};
+
+  // a task that can only be scheduled on weekdays
+  var t8 = {
+    id: 'Task8',
+    duration: 60,
+    available: later.parse.text('every weekday')
+  };
+
+  // a task with a priority set
+  var t9 = {id: 'Task9', duration: 60, priority: 100};
+
+  // a fully customized task
+  var t10 = {
+    id: 'Task10',
+    duration: 360,
+    minLength: 60,
+    dependsOn: ['Task1', 'Task5', 'Task9'],
+    resources: [['A', 'B', 'C'], 'D', 'E'],
+    available: later.parse.recur().on(2).dayOfWeek().after('9:00').time(),
+    priority: 50
+  };
+</pre>
+        </section>
+
+         <!-- Generator
+        ================================================== -->
+        <section id="generator">
+          <div>
+            <h2>Task generator</h2>
+          </div>
+          <p>Often times the tasks that your application defines are not in the
+            format that Schedule requires. To make the conversion process easier,
+            Schedule includes a task generator that can be used on any array of
+            objects to produce valid tasks.</p>
+
+<br/>
+<pre>
+  // creating a default task generator
+  var t = schedule.tasks();
+</pre>
+          <br/>
+          <h4>tasks#id</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>id</code> of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#duration</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>duration</code> of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#minLength</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>minLength</code> of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#dependsOn</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>dependsOn</code> array of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#resources</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>resources</code> array of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#available</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>available</code> schedule of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+          <br/>
+          <h4>tasks#priority</h4>
+          <p>Used to specify the value or function that should be called to
+            define the <code>priority</code> schedule of the task. If a function is specified,
+            it will be passed in the object and index from the input data array.</p>
+
+        <br/>
+        <h4>Example usage:</h4>
+<pre>
+  // the original reservations that we want to make into tasks
+  var reservations = [
+    {name: 'Joe', length: 4, availability: 'after 12:00'},
+    {name: 'Mike', length: 2},
+    {name: 'Frank', length: 8},
+    {name: 'John', length: 3, availability: 'on Thurs and Fri'},
+    {name: 'Peter', length: 1, availability: 'before 10:00am'},
+    {name: 'Sam', length: 2},
+    {name: 'Alan', length: 2},
+    {name: 'James', length: 8},
+    {name: 'Steve', length: 1, availability: 'after 12:00 and before 1:00pm'},
+    {name: 'Mark', length: 2},
+    {name: 'Alex', length: 8}
+  ];
+
+  // creating our task generator
+  var t = schedule.tasks()
+            // use the name as the id
+            .id(function(d) { return d.name; })
+
+            // our length is in hours, convert to minutes
+            .duration(function(d) {
+              return d.length * 60;
+            })
+
+            // use later.parse.text to parse text into a usable schedule
+            .available(function(d) {
+              return d.availability ? later.parse.text(d.availability) : undefined;
+            })
+
+            // prioritize our reservations on first come first serve using index
+            .priority(function(d, i) {
+              return 100 - i;
+            })
+
+            // reservations have to be contiguous
+            .minSchedule(function(d) {
+              return d.length * 60;
+            })
+
+            // assume all reservations are using the same resource
+            .resources(['E1']);
+
+  // create Schedule tasks from our reservations
+  var tasks = t(reservations);
+</pre>
+
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2013 BunKat &nbsp; Later is licensed under the
+          <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+      </div>
+    </footer>
+
+
+
+    <!-- Javascript
+    ================================================== -->
+    <script src="assets/js/jquery-1.10.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script>
+      // side bar
+      setTimeout(function () {
+        $('.later-sidenav').affix({
+          offset: {
+            top: function () { return $(window).width() <= 980 ? 230 : 150 }
+          , bottom: 270
+          }
+        })
+      }, 100);
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42237071-1', 'bunkat.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>

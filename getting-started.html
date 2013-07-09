@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>Getting Started</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
+    <meta name="description" content="schedulejs">
     <meta name="author" content="BunKat">
 
     <!-- Le styles -->
@@ -32,29 +32,26 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="./index.html">Later</a>
+          <a class="brand" href="./index.html">Schedule</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li class="active">
                 <a href="./getting-started.html">Getting started</a>
               </li>
               <li class="">
-                <a href="./schedules.html">Schedules</a>
+                <a href="./tasks.html">Tasks</a>
               </li>
               <li class="">
-                <a href="./time-periods.html">Time periods</a>
+                <a href="./resources.html">Resources</a>
               </li>
               <li class="">
-                <a href="./modifiers.html">Modifiers</a>
+                <a href="./create.html">Create schedule</a>
               </li>
               <li class="">
-                <a href="./parsers.html">Parsers</a>
+                <a href="./work-item-example.html">Work Item Example</a>
               </li>
               <li class="">
-                <a href="./occurrences.html">Occurrences</a>
-              </li>
-              <li class="">
-                <a href="./execute.html">Execute</a>
+                <a href="./reservation-example.html">Reservation Example</a>
               </li>
             </ul>
           </div>
@@ -67,7 +64,7 @@
 <header class="jumbotron subhead" id="overview">
   <div class="container">
     <h1>Getting started</h1>
-    <p class="lead">Overview of how to work with the Later project.</p>
+    <p class="lead">Overview of how to work with the Schedule project.</p>
   </div>
 </header>
 
@@ -96,26 +93,27 @@
           <div>
             <h2>Installation</h2>
           </div>
-          <p>Later is available through both <code>npm</code> and <code>bower</code> for easy
+          <p>Schedule is available through both <code>npm</code> and <code>bower</code> for easy
             installation. The installation includes all of the files that you
             will need to use the library. <code>Node.js</code> is required for
             building, testing, and benchmarking the library.</p>
           <br/>
           <p>Using npm:
 <pre>
-  $ npm install later
+  $ npm install schedule
 </pre>
 
-          <p>Using bower:
+          <p>Using bower (schedule depends on the Later library):
 <pre>
   $ bower install later
+  $ bower install schedule
 </pre>
           <br/>
           <p>If you would prefer, you can also download the source along with
             compiled versions of the library in a single zip file. Note that
             you will need to have Node.js and NPM installed in order to
             make builds, run tests, or run benchmarks.</p>
-            <a class="btn btn-large btn-primary" href="https://github.com/bunkat/later/archive/master.zip" >Download</a></p>
+            <a class="btn btn-large btn-primary" href="https://github.com/bunkat/schedule/archive/master.zip" >Download</a></p>
         </section>
 
         <!-- Example
@@ -124,34 +122,42 @@
           <div>
             <h2>Example usage</h2>
           </div>
-          <p>Later works in both the browser (IE7+, FireFox, Chrome, Safari) and Node.js environments. Simply
-            include the library to get access to the Later namespace and all
+          <p>Schedule works in both the browser (IE7+, FireFox, Chrome, Safari) and Node.js environments. Simply
+            include the library to get access to the Schedule namespace and all
             functionality.</p>
           <br/>
           <h4>Node Example</h4>
 <pre>
-  var later = require('later');
+  var schedule = require('schedule'),
+      tasks = [
+          {id:1, duration: 30, resources: ['A']},
+          {id:2, duration: 60, resources: ['B']}
+        ],
+      resources = [
+          {id: 'A'},
+          {id: 'B'}
+      ];
 
-  var sched = later.parse.text('every 5 mins'),
-      occurrences = later.schedule(sched).next(10);
-
-  for(var i = 0, i &lt; 10; i++) {
-    console.log(occurrences[i]);
-  }
+  schedule.create(tasks, resources, null, new Date());
 </pre>
           <br/>
           <h4>Browser Example</h4>
 <pre>
+  &lt;!-- Make sure to include the Later library first! --&gt;
   &lt;script src="later.min.js" type="text/javascript">&lt;/script&gt;
+  &lt;script src="schedule.min.js" type="text/javascript">&lt;/script&gt;
   &lt;script type="text/javascript"&gt;
 
-  var sched = later.parse.text('every 5 minutes'),
-      occurrences = later.schedule(sched).next(10);
+  var tasks = [
+          {id:1, duration: 30, resources: ['A']},
+          {id:2, duration: 60, resources: ['B']}
+        ],
+      resources = [
+          {id: 'A'},
+          {id: 'B'}
+      ];
 
-
-  for(var i = 0, i &lt; 10; i++) {
-    console.log(occurrences[i]);
-  }
+  schedule.create(tasks, resources, null, new Date());
 
   &lt;/script&gt;
 </pre>
@@ -163,19 +169,13 @@
           <div>
             <h2>Building</h2>
           </div>
-          <p>To build the development and production (minified) versions of Later,
-            first make sure that you have installed all of the dependencies. Later
+          <p>To build the development and production (minified) versions of Schedule,
+            first make sure that you have installed all of the dependencies. Schedule
             uses <code>smash</code> to first combine the source files and then
             <code>uglify</code> to minify it for production.</p>
 <pre>
   $ make all
 </pre>
-
-        <p>If you are not using the Cron or English text parsers, you can significantly
-          reduce the library file size by excluding these from the build. To do so,
-          modify <strong>/src/parse/index.js</strong> and remove the parsers that you are not using. Keep
-          in mind that the text parser has a dependency on the recur parser.</p>
-        <p>Once you're done modifying the file, simple run <code>make all</code>.</p>
 
         </section>
 
@@ -185,9 +185,8 @@
           <div>
             <h2>Running tests</h2>
           </div>
-          <p>Later includes over 40,000 unit and scenario tests that currently
-            cover over 97% of the codebase. The suite takes approximately 20
-            seconds to run on modern hardware. Later uses <code>mocha</code> for
+          <p>Schedule includes over 70 unit and scenario tests that currently
+            cover over 95% of the codebase. Schedule uses <code>mocha</code> for
             testing which must be installed prior to running tests.</p>
 <pre>
   $ make test
@@ -203,7 +202,7 @@
           </div>
           <p>There are some basic benchmarks (using <code>benchmarkjs</code>) included
             in the installation that
-            test the performance of the various time periods and a basic and complex
+            test the performance of building a dependency tree and generating a
             schedule. The benchmarks will provide you with an idea of how the
             library will perform on your hardware.</p>
 <pre>

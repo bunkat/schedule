@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Create schedule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="schedulejs">
+    <meta name="author" content="BunKat">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".later-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">Schedule</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./getting-started.html">Getting started</a>
+              </li>
+              <li class="">
+                <a href="./tasks.html">Tasks</a>
+              </li>
+              <li class="">
+                <a href="./resources.html">Resources</a>
+              </li>
+              <li class="active">
+                <a href="./create.html">Create schedule</a>
+              </li>
+              <li class="">
+                <a href="./work-item-example.html">Work Item Example</a>
+              </li>
+              <li class="">
+                <a href="./reservation-example.html">Reservation Example</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Create schedule</h1>
+    <p class="lead">Creating a new schedule from a set of tasks and resources.</p>
+  </div>
+</header>
+
+
+  <div class="container">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row">
+      <div class="span3 later-sidebar">
+        <ul class="nav nav-list later-sidenav">
+          <li><a href="#overview"><i class="icon-chevron-right"></i> Overview</a></li>
+          <li><a href="#create"><i class="icon-chevron-right"></i> Create schedule</a></li>
+          <li><a href="#results"><i class="icon-chevron-right"></i> Results</a></li>
+        </ul>
+      </div>
+      <div class="span9">
+
+
+        <!-- Overview
+        ================================================== -->
+        <section id="overview">
+          <div>
+            <h2>Overview</h2>
+          </div>
+          <p>Once your tasks and resources have been defined, they can be used
+            to generate a new schedule. The schedule includes the start
+            and end times for each task that was successfully scheduled and a list
+            of any tasks that could not be scheduled. The schedule also contains
+            a lot of additional details such as the resources that were reserved and
+            the causes of any delays in the schedule.</p>
+
+          <br/>
+          <p><span class="label label-info">Tip</span> All schedules are timezone agnostic. When
+            you need to calculate occurrences, you can decide to perform the
+            calculation using local time or UTC.</p>
+
+<pre>
+  // set later to use UTC time (the default)
+  schedule.date.UTC();
+
+  // set later to use local time
+  schedule.date.localTime();
+</pre>
+
+        </section>
+
+        <!-- Instances
+        ================================================== -->
+        <section id="create">
+          <div>
+            <h2>Creating a new schedule</h2>
+          </div>
+          <p>Once the tasks and resources have been defined, creating a new schedule
+            is done using <code>schedule.create</code>.</p>
+          <br/>
+          <h4>schedule.create(<i>tasks</i>, <i>resources</i>, <i>schedule</i>, <i>start</i>)</h4>
+          <p>Generates a new schedule for each of the <code>tasks</code>, reserving
+            <code>resources</code> as required. The schedules generated will always
+            occur at valid times according to the <code>Later</code>
+            <code>schedule</code> specified and will start no earlier than <code>start</code>.</p>
+<br/>
+<pre>
+  // Define a set of tasks
+  var tasks = [
+    {id: 1, duration: 60, available: later.parse.text('every weekday')},
+    {id: 2, duration: 30, dependsOn: [1], resources: ['A']},
+    {id: 3, duration: 30, dependsOn: [1], resources: [['A','B']]}
+  ];
+
+  // Define a set of resources
+  var resources = [
+    {id: A},
+    {id: B, available: later.parse.text('after 10:00am and before 6:00pm')}
+  ];
+
+  // Create the schedule for all of the tasks
+  schedule.create(tasks, resources, later.parse.text('every weekday'), new Date());
+</pre>
+
+        </section>
+
+        <!-- Results
+        ================================================== -->
+        <section id="results">
+          <div>
+            <h2>Understanding the results</h2>
+          </div>
+          <p>Creating a new schedule produces a JSON object with a lot of details
+            pertaining to the schedule that was created. Here we'll take a quick look
+            at the results from the <a href="./work-item-example.html">work item
+            example</a>.</p>
+          <br/>
+
+          <h4>Schedule object</h4>
+          <p>The schedule object is returned from <code>schedule.create</code>
+            and contains summary information about the schedule. The set of tasks
+            that was successfully scheduled is returned as a map in
+            <code>scheduledTasks</code> (described fully below). Any tasks that
+            could not be scheduled are listed in the <code>failedTasks</code>
+            array.  If there were no failures, <code>success</code> will be true. The
+            <code>start</code> time is the earliest time that any task was scheduled to start and
+            <code>end</code> is the latest finishing time of any task.</p>
+          <br/>
+          <p><span class="label label-info">Note</span> All
+            dates are returned as milliseconds from the Unix epoch, you can convert them
+            to dates using <code>new Date(val);</code>.</p>
+
+<pre>
+  { scheduledTasks: {...see below...}
+    failedTasks: null,
+    success: true,
+    start: 1364050800000,
+    end: 1364157000000 }
+</pre>
+          <br/>
+          <h4>Scheduled Tasks</h4>
+          <p>The <code>scheduledTasks</code>is a map that contains one entry for
+            each task that was successfully scheduled. The key is the task
+            <code>id</code>. The value is an object containing an array of
+            schedule items (described fully below), the total <code>duration</code>
+            of the task, and a summary of the schedule.</p>
+          <p>The summary includes
+            the first time the task is scheduled for (<code>earlyStart</code>),
+            the time the task is scheduled to finish (<code>earlyFinish</code>),
+            and the earliest time that a dependent task requires this task to be
+            complete (<code>lateFinish</code>).</p>
+          <p>The <code>float</code> is the difference between
+            the <code>lateFinish</code> and the <code>earlyFinish</code> in
+            minutes. Any tasks that has a float of 0 are in the critical path which means
+            any slip in the completion of this task will cause the schedule end date
+            to slip as well.
+          </p>
+
+<pre>
+  { 'Purchase supplies':
+    { schedule: [...see below...],
+      duration: 120,
+      earlyStart: 1364058000000,
+      earlyFinish: 1364065200000,
+      lateFinish: 1364067000000,
+      floatAmt: 30
+    },
+    ...
+  }
+</pre>
+
+          <br/>
+          <h4>Task schedule</h4>
+          <p>The task <code>schedule</code>is an array of times that the task
+            has been scheduled for. It is returned as an array since a task
+            can be broken up into multiple segments to better fit the schedule.</p>
+          <p>Each segment includes the set of <code>resources</code> that was
+            reserved, the <code>start</code> and <code>end</code>
+            times of the segment, the <code>duration</code> of the segment, and a list of
+            <code>delays</code> which are fully described below.
+          </p>
+<pre>
+  [
+    {
+      resources: [ 'Bob', 'Sara' ],
+      start: 1364058000000,
+      end: 1364065200000,
+      duration: 120,
+      success: true,
+      delays: {...see below...}
+    },
+    ...
+ ]
+</pre>
+
+          <br/>
+          <h4>Delays</h4>
+          <p>The <code>delays</code> list is a list of the things that caused
+            a task segment to not start as soon as all of its dependencies were
+            met. In this example, the task itself was not available, nor were
+            Bob or Sara (all due to the available scheduled defined for them).
+          </p>
+<pre>
+  {
+    '_taskPurchase supplies':
+      { needed: 1363849200000,
+        available: 1363878000000 },
+    Bob:
+      { needed: 1363849200000,
+        available: 1364058000000 },
+    Sara:
+      { needed: 1363849200000,
+        available: 1364050800000 }
+  }
+</pre>
+
+
+          <br/>
+
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2013 BunKat &nbsp; Later is licensed under the
+          <a href="http://opensource.org/licenses/MIT">MIT license</a>.</p>
+      </div>
+    </footer>
+
+
+
+    <!-- Javascript
+    ================================================== -->
+    <script src="assets/js/jquery-1.10.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script>
+      // side bar
+      setTimeout(function () {
+        $('.later-sidenav').affix({
+          offset: {
+            top: function () { return $(window).width() <= 980 ? 230 : 150 }
+          , bottom: 270
+          }
+        })
+      }, 100);
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-42237071-1', 'bunkat.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>
