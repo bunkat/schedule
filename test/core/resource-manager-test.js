@@ -8,14 +8,14 @@ describe('Resource Manager', function() {
 
   // resource setup
   var resources = [
-        {id: 'A', schedule: {schedules: [{h_a: [8], h_b: [16]}]}},
-        {id: 'B', schedule: {schedules: [{h_a: [10], h_b: [14]}]}},
-        {id: 'C', schedule: {schedules: [{h_a: [8], h_b: [12]}]}},
-        {id: 'D', schedule: {schedules: [{h_a: [18], h_b: [20]}]}},
-        {id: 'E', schedule: {schedules: [{h_a: [12], h_b: [14]}]}},
+        {id: 'A', available: {schedules: [{h_a: [8], h_b: [16]}]}},
+        {id: 'B', available: {schedules: [{h_a: [10], h_b: [14]}]}},
+        {id: 'C', available: {schedules: [{h_a: [8], h_b: [12]}]}},
+        {id: 'D', available: {schedules: [{h_a: [18], h_b: [20]}]}},
+        {id: 'E', available: {schedules: [{h_a: [12], h_b: [14]}]}},
 
         // resource definition for the project schedule
-        {id: '_proj', schedule: {schedules: [{h_a: [6], h_b: [20]}]}, isNotReservable: true}
+        {id: '_proj', available: {schedules: [{h_a: [6], h_b: [20]}]}, isNotReservable: true}
       ],
       startDate = new Date(2013, 2, 21);
 

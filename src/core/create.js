@@ -26,7 +26,7 @@ schedule.create = function(tasks, resources, sched, startDate) {
     // schedule and all task schedules to the resource manager (these will
     // be treated as resources to calculate valid reservations with)
     resMgr.addResource(taskGraph.resources, '', startDate);
-    resMgr.addResource([{id: '_proj', schedule: sched}], '', startDate);
+    resMgr.addResource([{id: '_proj', available: sched}], '', startDate);
     resMgr.addResource(tasks, '_task', startDate);
 
     forwardPass(taskGraph.roots);

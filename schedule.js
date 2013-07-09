@@ -81,14 +81,14 @@ schedule = function(later) {
     });
   };
   schedule.resources = function() {
-    var id = resourcesId, sched = resourcesSched, isNotReservable = resourcesIsNotReservable;
+    var id = resourcesId, available = resourcesAvailable, isNotReservable = resourcesIsNotReservable;
     function resources(data) {
-      var items = [], fid = schedule.functor(id), fsched = schedule.functor(sched), freserve = schedule.functor(isNotReservable);
+      var items = [], fid = schedule.functor(id), favailable = schedule.functor(available), freserve = schedule.functor(isNotReservable);
       for (var i = 0, len = data.length; i < len; i++) {
-        var resource = data[i], rId = fid.call(this, resource, i), rSched = fsched.call(this, resource, i), rReserve = freserve.call(this, resource, i);
+        var resource = data[i], rId = fid.call(this, resource, i), rAvailable = favailable.call(this, resource, i), rReserve = freserve.call(this, resource, i);
         items.push({
           id: rId,
-          schedule: rSched,
+          available: rAvailable,
           isNotReservable: rReserve
         });
       }
@@ -99,9 +99,9 @@ schedule = function(later) {
       id = _;
       return resources;
     };
-    resources.schedule = function(_) {
-      if (!arguments.length) return sched;
-      sched = _;
+    resources.available = function(_) {
+      if (!arguments.length) return available;
+      available = _;
       return resources;
     };
     resources.isNotReservable = function(_) {
@@ -114,21 +114,21 @@ schedule = function(later) {
   function resourcesId(d) {
     return d.id;
   }
-  function resourcesSched(d) {
-    return d.schedule;
+  function resourcesAvailable(d) {
+    return d.available;
   }
   function resourcesIsNotReservable(d) {
     return d.isNotReservable || false;
   }
   schedule.tasks = function() {
-    var id = tasksId, duration = tasksDuration, sched = tasksSched, resources = tasksResources, dependsOn = tasksDependsOn, minSchedule = tasksMinSchedule, priority = tasksPriority;
+    var id = tasksId, duration = tasksDuration, available = tasksAvailable, resources = tasksResources, dependsOn = tasksDependsOn, minSchedule = tasksMinSchedule, priority = tasksPriority;
     function tasks(data) {
-      var items = [], fid = schedule.functor(id), fduration = schedule.functor(duration), fsched = schedule.functor(sched), fresources = schedule.functor(resources), fdependsOn = schedule.functor(dependsOn), fminschedule = schedule.functor(minSchedule), fpriority = schedule.functor(priority);
+      var items = [], fid = schedule.functor(id), fduration = schedule.functor(duration), favailable = schedule.functor(available), fresources = schedule.functor(resources), fdependsOn = schedule.functor(dependsOn), fminschedule = schedule.functor(minSchedule), fpriority = schedule.functor(priority);
       for (var i = 0, len = data.length; i < len; i++) {
         var task = data[i], item = {
           id: fid.call(this, task, i),
           duration: fduration.call(this, task, i),
-          schedule: fsched.call(this, task, i),
+          available: favailable.call(this, task, i),
           resources: fresources.call(this, task, i),
           dependsOn: fdependsOn.call(this, task, i),
           minSchedule: fminschedule.call(this, task, i),
@@ -148,9 +148,9 @@ schedule = function(later) {
       duration = _;
       return tasks;
     };
-    tasks.schedule = function(_) {
-      if (!arguments.length) return sched;
-      sched = _;
+    tasks.available = function(_) {
+      if (!arguments.length) return available;
+      available = _;
       return tasks;
     };
     tasks.resources = function(_) {
@@ -181,8 +181,8 @@ schedule = function(later) {
   function tasksDuration(d) {
     return d.duration;
   }
-  function tasksSched(d) {
-    return d.schedule;
+  function tasksAvailable(d) {
+    return d.available;
   }
   function tasksResources(d) {
     return d.resources;
@@ -343,7 +343,7 @@ schedule = function(later) {
       return map;
     }
     function addResourceToMap(map, def, start) {
-      var sched = JSON.parse(JSON.stringify(def.schedule || defaultSched)), nextFn = schedule.memoizedRangeFn(later.schedule(sched).nextRange);
+      var sched = JSON.parse(JSON.stringify(def.available || defaultSched)), nextFn = schedule.memoizedRangeFn(later.schedule(sched).nextRange);
       map[def.id] = {
         schedule: sched,
         next: nextFn,
@@ -497,7 +497,7 @@ schedule = function(later) {
             id: prefix + arr[i]
           } : {
             id: prefix + arr[i].id,
-            schedule: arr[i].schedule,
+            available: arr[i].available,
             isNotReservable: arr[i].isNotReservable
           };
           if (!rMap[def.id]) {
@@ -536,7 +536,7 @@ schedule = function(later) {
       resMgr.addResource(taskGraph.resources, "", startDate);
       resMgr.addResource([ {
         id: "_proj",
-        schedule: sched
+        available: sched
       } ], "", startDate);
       resMgr.addResource(tasks, "_task", startDate);
       forwardPass(taskGraph.roots);

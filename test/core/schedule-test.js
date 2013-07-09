@@ -279,7 +279,7 @@ describe('Schedule', function() {
 
     it('should only schedule tasks when available', function() {
       var tasks = [
-            {id: 'A', duration: 120, schedule: {schedules: [{h_a: [12]}]}}
+            {id: 'A', duration: 120, available: {schedules: [{h_a: [12]}]}}
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
@@ -291,7 +291,7 @@ describe('Schedule', function() {
 
     it('should fail to schedule tasks that will never be available', function() {
       var tasks = [
-            {id: 'A', duration: 120, schedule: {schedules: [{fd_b: [100]}]}}
+            {id: 'A', duration: 120, available: {schedules: [{fd_b: [100]}]}}
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 
@@ -303,7 +303,7 @@ describe('Schedule', function() {
 
     it('should fail to schedule tasks with an invalid schedule', function() {
       var tasks = [
-            {id: 'A', duration: 120, schedule:
+            {id: 'A', duration: 120, available:
               {
                 schedules: [{h: [5,6]}],
                 exceptions: [{h: [5,6]}]
@@ -320,7 +320,7 @@ describe('Schedule', function() {
 
     it('should work if project schedule is null', function() {
       var tasks = [
-            {id: 'A', duration: 120, schedule: {schedules: [{h_a: [12]}]}}
+            {id: 'A', duration: 120, available: {schedules: [{h_a: [12]}]}}
           ],
           startDate = new Date(2013, 2, 21, 0, 0, 0);
 

@@ -14,8 +14,8 @@ describe('Tasks', function() {
       should.exist(schedule.tasks().duration);
     });
 
-    it('should support a custom schedule function', function() {
-      should.exist(schedule.tasks().schedule);
+    it('should support a custom available function', function() {
+      should.exist(schedule.tasks().available);
     });
 
     it('should support a custom resources function', function() {
@@ -34,29 +34,5 @@ describe('Tasks', function() {
       should.exist(schedule.tasks().priority);
     });
   });
-
-
-  describe('accessors', function() {
-
-    it('should support default accessors', function() {
-
-
-
-    });
-
-  });
-
-
-  describe('return tree', function() {
-
-
-
-
-
-  });
-
-
-
-
 
 });

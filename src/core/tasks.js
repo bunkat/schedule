@@ -12,7 +12,7 @@
 schedule.tasks = function() {
   var id = tasksId,
       duration = tasksDuration,
-      sched = tasksSched,
+      available = tasksAvailable,
       resources = tasksResources,
       dependsOn = tasksDependsOn,
       minSchedule = tasksMinSchedule,
@@ -25,7 +25,7 @@ schedule.tasks = function() {
     var items = [],
         fid = schedule.functor(id),
         fduration = schedule.functor(duration),
-        fsched = schedule.functor(sched),
+        favailable = schedule.functor(available),
         fresources = schedule.functor(resources),
         fdependsOn = schedule.functor(dependsOn),
         fminschedule = schedule.functor(minSchedule),
@@ -36,7 +36,7 @@ schedule.tasks = function() {
           item = {
             id: fid.call(this, task, i),
             duration: fduration.call(this, task, i),
-            schedule: fsched.call(this, task, i),
+            available: favailable.call(this, task, i),
             resources: fresources.call(this, task, i),
             dependsOn: fdependsOn.call(this, task, i),
             minSchedule: fminschedule.call(this, task, i),
@@ -76,9 +76,9 @@ schedule.tasks = function() {
   * schedule must be a valid Later.js schedule. Sets the value to the argument
   * passed in, returns current value if no arguments are passed in.
   */
-  tasks.schedule = function(_) {
-    if (!arguments.length) return sched;
-    sched = _;
+  tasks.available = function(_) {
+    if (!arguments.length) return available;
+    available = _;
     return tasks;
   };
 
@@ -146,8 +146,8 @@ function tasksDuration(d) {
 /**
 * The default schedule function.
 */
-function tasksSched(d) {
-  return d.schedule;
+function tasksAvailable(d) {
+  return d.available;
 }
 
 /**

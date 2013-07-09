@@ -12,7 +12,7 @@
 
 schedule.resources = function() {
   var id = resourcesId,
-      sched = resourcesSched,
+      available = resourcesAvailable,
       isNotReservable = resourcesIsNotReservable;
 
   /**
@@ -21,16 +21,16 @@ schedule.resources = function() {
   function resources(data) {
     var items = [],
         fid = schedule.functor(id),
-        fsched = schedule.functor(sched),
+        favailable = schedule.functor(available),
         freserve = schedule.functor(isNotReservable);
 
     for(var i = 0, len = data.length; i < len; i++) {
       var resource = data[i],
           rId = fid.call(this, resource, i),
-          rSched = fsched.call(this, resource, i),
+          rAvailable = favailable.call(this, resource, i),
           rReserve = freserve.call(this, resource, i);
 
-      items.push({id: rId, schedule: rSched, isNotReservable: rReserve});
+      items.push({id: rId, available: rAvailable, isNotReservable: rReserve});
     }
 
     return items;
@@ -52,9 +52,9 @@ schedule.resources = function() {
   * schedule must be a valid Later.js schedule. Sets the value to the argument
   * passed in, returns current value if no arguments are passed in.
   */
-  resources.schedule = function(_) {
-    if (!arguments.length) return sched;
-    sched = _;
+  resources.available = function(_) {
+    if (!arguments.length) return available;
+    available = _;
     return resources;
   };
 
@@ -82,8 +82,8 @@ function resourcesId(d) {
 /**
 * The default schedule function.
 */
-function resourcesSched(d) {
-  return d.schedule;
+function resourcesAvailable(d) {
+  return d.available;
 }
 
 /**

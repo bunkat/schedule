@@ -91,7 +91,7 @@ describe('Example: Paint room project', function() {
               // our length is in hours, convert to minutes
               .duration(function(d) { return d.length * 60; })
               // use later.parse.text to parse text into a usable schedule
-              .schedule(function(d) { return d.availability ? p(d.availability) : undefined; })
+              .available(function(d) { return d.availability ? p(d.availability) : undefined; })
               // convert minSchedule to hours
               .minSchedule(function(d) { return d.minSchedule ? d.minSchedule * 60 : undefined; })
               // resources are the people the tasks have been assigned to
@@ -102,7 +102,7 @@ describe('Example: Paint room project', function() {
     // Step 4: Resources aren't in the right format, need to create a generator
     var r = schedule.resources()
               .id(function(d) { return d.name; })
-              .schedule(function(d) { return d.availability ? p(d.availability) : undefined; });
+              .available(function(d) { return d.availability ? p(d.availability) : undefined; });
 
     var resources = r(people);
 

@@ -36,7 +36,7 @@ schedule.resourceManager = function(resourceDefinitions, startDate) {
   * Adds a resource to the resource map.
   */
   function addResourceToMap(map, def, start) {
-    var sched = JSON.parse(JSON.stringify(def.schedule || defaultSched)),
+    var sched = JSON.parse(JSON.stringify(def.available || defaultSched)),
         nextFn = schedule.memoizedRangeFn(later.schedule(sched).nextRange);
 
     map[def.id] = { schedule: sched, next: nextFn, nextAvail: nextFn(start) };
@@ -266,7 +266,7 @@ schedule.resourceManager = function(resourceDefinitions, startDate) {
       for(var i = 0, len = arr.length; i < len; i++) {
         var def = typeof arr[i] !== 'object' ?
           { id: prefix + arr[i] } :
-          { id: prefix + arr[i].id, schedule: arr[i].schedule, isNotReservable: arr[i].isNotReservable };
+          { id: prefix + arr[i].id, available: arr[i].available, isNotReservable: arr[i].isNotReservable };
 
         if(!rMap[def.id]) {
           addResourceToMap(rMap, def, start);
