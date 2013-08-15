@@ -72,7 +72,7 @@ var t = schedule.tasks()
           // our length is in hours, convert to minutes
           .duration(function(d) { return d.length * 60; })
           // use later.parse.text to parse text into a usable schedule
-          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; })
+          .available(function(d) { return d.availability ? p(d.availability) : undefined; })
           // prioritize our reservations on first come first serve
           .priority(function(d, i) { return 100 - i; })
           // elevator reservations have to be contiguous
@@ -85,7 +85,7 @@ var tasks = t(reservations);
 // Step 4: Resources aren't in the right format, need to create a generator
 var r = schedule.resources()
           .id(function(d) { return d.name; })
-          .schedule(function(d) { return d.availability ? p(d.availability) : undefined; });
+          .available(function(d) { return d.availability ? p(d.availability) : undefined; });
 
 var resources = r(elevators);
 
