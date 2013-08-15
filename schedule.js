@@ -5,7 +5,7 @@ if (typeof module !== "undefined" && module.exports) {
 schedule = function(later) {
   "use strict";
   var schedule = {
-    version: "0.6.2"
+    version: "0.6.3"
   };
   if (!later) throw new Error("Laterjs must be included before Schedulejs.");
   if (!Array.isArray) {
