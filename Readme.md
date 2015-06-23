@@ -1,3 +1,5 @@
+## This code is no longer being actively maintained. It should not be used in production. It may or may not work for your particular use case. ###
+
 # [Schedule v0.6.2](http://bunkat.github.io/schedule/) [![Build Status](https://travis-ci.org/bunkat/schedule.png)](https://travis-ci.org/bunkat/schedule)
 
 _Schedule_ is a library for scheduling a set of tasks with complex dependencies that require a set of resources to complete. Takes advantage of [Later](http://bunkat.github.io/later/) schedules to provide incredible flexibility on when tasks are scheduled and when resources can be reserved.
