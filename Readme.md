@@ -10,7 +10,7 @@ Types of schedules supported by _Schedule_:
 * Manage elevator reservations for an apartment building
 * Schedule the company ping pong tournment
 
-####For complete documentation visit [http://bunkat.github.io/schedule/](http://bunkat.github.io/schedule/).
+#### For complete documentation visit [http://bunkat.github.io/schedule/](http://bunkat.github.io/schedule/).
 
 
 ## Installation
